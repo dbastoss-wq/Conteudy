@@ -9,7 +9,7 @@ App Vite + rotas serverless da Vercel. O site conversa em `/api/chat`. O bot do 
 | `TELEGRAM_BOT_TOKEN` | sim | Token do bot, gerado no @BotFather |
 | `TELEGRAM_WEBHOOK_SECRET` | sim | Texto aleatório; protege o webhook e o `/api/setup` |
 | `TELEGRAM_SETUP_SECRET` | não | Chave do `/api/setup` (se ausente, usa `TELEGRAM_WEBHOOK_SECRET`) |
-| `SABIA_API_KEY` | sim | Chave da API de IA (padrão: xAI/Grok) |
+| `SABIA_API_KEY` | não | Chave da API de IA (padrão: xAI/Grok). Sem ela, usa o AI Gateway da Vercel (`xai/grok-4.5`) sem chave |
 | `SABIA_API_URL` | não | Endpoint compatível com OpenAI (padrão `https://api.x.ai/v1/chat/completions`) |
 | `SABIA_MODEL` | não | Modelo (padrão `grok-4`) |
 | `SABIA_SYSTEM_PROMPT` | não | Personalidade do bot |
@@ -36,3 +36,9 @@ WEBHOOK_URL=https://SEU-DOMINIO/api/telegram npm run webhook
 ```
 
 Não grave o token no repositório.
+
+## Testar a IA
+
+```
+https://SEU-DOMINIO/api/teste?key=SUA_CHAVE_DE_SETUP&q=qual a capital do Brasil
+```

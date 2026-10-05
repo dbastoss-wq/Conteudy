@@ -1,14 +1,35 @@
+import { getVercelOidcToken } from "@vercel/oidc";
 import type { SabiaMessage, SabiaTurn } from "./types.js";
 
 const DEFAULT_URL = "https://api.x.ai/v1/chat/completions";
 const DEFAULT_MODEL = "grok-4";
+const GATEWAY_URL = "https://ai-gateway.vercel.sh/v1/chat/completions";
+const GATEWAY_MODEL = "xai/grok-4.5";
 const DEFAULT_PROMPT = "Você é a Sabiá, assistente em português do Brasil. Responda de forma direta, útil e curta o bastante para caber no Telegram.";
 
+// Com SABIA_API_KEY fala direto com a API escolhida (padrão xAI).
+// Sem ela, usa o AI Gateway da Vercel autenticado pelo OIDC do próprio deploy.
+async function target() {
+  const key = process.env.SABIA_API_KEY?.trim();
+  if (key) {
+    return {
+      key,
+      url: process.env.SABIA_API_URL?.trim() || DEFAULT_URL,
+      model: process.env.SABIA_MODEL?.trim() || DEFAULT_MODEL,
+    };
+  }
+  const oidc = process.env.AI_GATEWAY_API_KEY || (await getVercelOidcToken().catch(() => undefined));
+  if (!oidc) throw new Error("Sem SABIA_API_KEY e sem token OIDC da Vercel");
+  const model = process.env.SABIA_MODEL?.trim();
+  return { key: oidc, url: GATEWAY_URL, model: model?.includes("/") ? model : GATEWAY_MODEL };
+}
+
+export async function aiMode() {
+  return process.env.SABIA_API_KEY?.trim() ? "chave" : "ai-gateway";
+}
+
 export async function askSabia(turn: SabiaTurn): Promise<string> {
-  const key = process.env.SABIA_API_KEY;
-  if (!key) throw new Error("SABIA_API_KEY ausente");
-  const url = process.env.SABIA_API_URL || DEFAULT_URL;
-  const model = process.env.SABIA_MODEL || DEFAULT_MODEL;
+  const { key, url, model } = await target();
   const messages: SabiaMessage[] = [
     { role: "system", content: process.env.SABIA_SYSTEM_PROMPT || DEFAULT_PROMPT },
     ...(turn.history ?? []).filter((item) => item.role !== "system").slice(-12),

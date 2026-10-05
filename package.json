@@ -10,6 +10,7 @@
     "webhook": "node scripts/set-webhook.mjs"
   },
   "dependencies": {
+    "@vercel/oidc": "^4.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
