@@ -1,6 +1,6 @@
 ---
 name: notas-aula-residencia
-description: Transforma a transcrição de uma aula de medicina (Eu Médico Residente, Medcel, Estratégia MED, Medway, Sanar ou qualquer cursinho) em notas de estudo para prova de residência médica, com resumo por tópicos na ordem da aula, ⭐ nos temas mais cobrados, tabelas de classificações, critérios, diferenciais e condutas/doses, ⚠️ onde a aula diverge das diretrizes atuais, mnemônicos, top 10 pontos, 5 questões comentadas e roteiro de videoaula-resumo. Use sempre que o usuário colar ou anexar uma transcrição, legenda (.srt/.vtt), PDF ou anotações de aula e pedir resumo, notas, revisão ou material para estudar para a residência, mesmo que não cite a prova.
+description: Transforma a transcrição de uma aula de medicina (Eu Médico Residente, Medcel, Estratégia MED, Medway, Sanar ou qualquer cursinho) em notas de estudo para prova de residência médica, com resumo por tópicos na ordem da aula, ⭐ nos temas mais cobrados, tabelas de classificações, critérios, diferenciais e condutas/doses, ⚠️ onde a aula diverge das diretrizes atuais, mnemônicos, top 10 pontos, 5 questões comentadas em PDF e flashcards (pergunta | resposta). Use sempre que o usuário colar ou anexar uma transcrição, legenda (.srt/.vtt), PDF ou anotações de aula e pedir resumo, notas, revisão ou material para estudar para a residência, mesmo que não cite a prova.
 ---
 
 # Notas de aula para prova de residência
@@ -65,15 +65,23 @@ Lista numerada, uma ou duas linhas cada, em ordem de importância para a prova.
 - Varie o tipo: diagnóstico, próximo passo/conduta, exame padrão-ouro, classificação/estadiamento e uma pegadinha.
 - Pelo menos uma questão deve explorar um ponto ⚠️ ou uma exceção.
 - Distratores plausíveis, sem "todas as anteriores".
-- Coloque **todas as questões primeiro** e o **gabarito comentado depois**, sob um título próprio, para que o aluno possa responder antes de ver as respostas. No comentário, explique por que a correta está certa e por que cada distrator está errado, em uma linha cada.
+- No gabarito comentado, explique por que a correta está certa e por que cada distrator está errado, em uma linha cada.
 
-#### 🎬 Videoaula-resumo
-Escreva um **roteiro de videoaula-resumo de 5 a 7 minutos** para revisar o tema na véspera da prova:
-- tabela `Tempo | Fala (narração) | Na tela`, em blocos de cerca de 30 a 60 s;
-- abertura com o gancho "o que a banca quer de você neste tema", depois os pontos ⭐ na ordem lógica, os mnemônicos, as divergências ⚠️ e um fechamento com 3 frases-chave;
-- linguagem falada, frases curtas, como um professor revisando com o aluno.
+**Entregue as 5 questões em PDF**, com as questões primeiro e o gabarito comentado numa página separada, para o aluno responder antes de ver as respostas:
+1. Salve as questões num JSON no formato descrito no topo de `scripts/questoes_pdf.py`: `tema`, `fonte` (opcional) e `questoes[]` com `enunciado`, `alternativas` (A–E), `gabarito`, `comentario` e `distratores` (opcional, um motivo por alternativa errada).
+2. Rode `python3 <pasta-da-skill>/scripts/questoes_pdf.py questoes.json "Questoes - <tema>.pdf"`. Se faltar a biblioteca, instale antes com `pip install reportlab`.
+3. Entregue o PDF ao usuário, que é o arquivo para baixar ou imprimir. No texto da resposta, deixe só os enunciados resumidos e diga que o gabarito está no PDF.
 
-Se o usuário tiver ferramentas de vídeo ou de slides conectadas e pedir o vídeo de fato, ofereça gerar a partir do roteiro. Caso contrário, entregue só o roteiro.
+Se não for possível rodar Python, use a skill de PDF disponível ou, em último caso, mostre as questões em Markdown com o gabarito separado.
+
+#### 🃏 Flashcards
+Crie de **15 a 25 flashcards** numa tabela `| # | Pergunta | Resposta |`:
+- um fato por cartão, com respostas curtas (uma linha, no máximo um número ou critério);
+- priorize os pontos ⭐, pontos de corte, doses, critérios, padrão-ouro vs. exame inicial, exceções e as divergências ⚠️;
+- perguntas diretas ("Qual o exame padrão-ouro para…?", "Dose de… na…?"), nunca "Fale sobre…";
+- mantenha ⭐ na pergunta dos cartões mais cobrados.
+
+Depois da tabela, ofereça os mesmos cartões em formato de importação para o Anki (`pergunta;resposta`, um por linha) num bloco de código.
 
 ## Estilo
 - Português do Brasil, termos técnicos corretos e siglas expandidas na primeira vez.
