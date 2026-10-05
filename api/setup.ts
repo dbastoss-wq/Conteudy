@@ -1,7 +1,7 @@
 export const config = { maxDuration: 30 };
 
 // Registra o webhook do bot apontando para este deploy.
-// Uso: GET /api/setup?key=<TELEGRAM_WEBHOOK_SECRET>
+// Uso: GET /api/setup?key=<TELEGRAM_SETUP_SECRET ou TELEGRAM_WEBHOOK_SECRET>
 export default async function handler(req: any, res: any) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
@@ -9,7 +9,8 @@ export default async function handler(req: any, res: any) {
     res.status(500).json({ ok: false, error: "Defina TELEGRAM_BOT_TOKEN e TELEGRAM_WEBHOOK_SECRET na Vercel" });
     return;
   }
-  if (req.query?.key !== secret) {
+  const setupKey = process.env.TELEGRAM_SETUP_SECRET || secret;
+  if (req.query?.key !== setupKey) {
     res.status(401).json({ ok: false });
     return;
   }

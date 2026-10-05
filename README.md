@@ -8,6 +8,7 @@ App Vite + rotas serverless da Vercel. O site conversa em `/api/chat`. O bot do 
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | sim | Token do bot, gerado no @BotFather |
 | `TELEGRAM_WEBHOOK_SECRET` | sim | Texto aleatório; protege o webhook e o `/api/setup` |
+| `TELEGRAM_SETUP_SECRET` | não | Chave do `/api/setup` (se ausente, usa `TELEGRAM_WEBHOOK_SECRET`) |
 | `SABIA_API_KEY` | sim | Chave da API de IA (padrão: xAI/Grok) |
 | `SABIA_API_URL` | não | Endpoint compatível com OpenAI (padrão `https://api.x.ai/v1/chat/completions`) |
 | `SABIA_MODEL` | não | Modelo (padrão `grok-4`) |
@@ -23,10 +24,10 @@ Depois de criar ou mudar variáveis, faça **Redeploy**.
 Abra no navegador, uma vez:
 
 ```
-https://SEU-DOMINIO/api/setup?key=SEU_TELEGRAM_WEBHOOK_SECRET
+https://SEU-DOMINIO/api/setup?key=SUA_CHAVE_DE_SETUP
 ```
 
-Isso registra o webhook em `https://SEU-DOMINIO/api/telegram`. Confira em `/api/health`.
+(`/api/ligar` é um atalho para a mesma rota.) Isso registra o webhook em `https://SEU-DOMINIO/api/telegram`. Confira em `/api/health`.
 
 Alternativa pela linha de comando:
 
