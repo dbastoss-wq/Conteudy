@@ -1,5 +1,7 @@
+import { botToken } from "./token.server.js";
+
 function token() {
-  const value = process.env.TELEGRAM_BOT_TOKEN;
+  const value = botToken();
   if (!value) throw new Error("TELEGRAM_BOT_TOKEN ausente");
   return value;
 }
