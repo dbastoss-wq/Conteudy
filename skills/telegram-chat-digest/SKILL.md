@@ -1,6 +1,6 @@
 ---
 name: telegram-chat-digest
-description: Produce a read-only digest of the user's Telegram chats in Chiho — what's unread or important, what each conversation is about, and the action items it implies. Use when the user asks for a Telegram summary, "what did I miss", a daily/weekly chat recap, unread overview, or a list of open questions and follow-ups across chats. Never sends, edits, or marks messages; hands off to an approval-gated skill if the user wants to reply.
+description: Produce a read-only digest of the user's Telegram chats in Chiho — what's unread or important, what each conversation is about, and the action items it implies. Use when the user asks for a Telegram summary, "what did I miss", a daily/weekly chat recap, unread overview, or a list of open questions and follow-ups across chats. Never sends, edits, or marks messages in the user's chats; can optionally deliver the finished digest to the user via their own Telegram bot (@My_cloude_1_Bot, through Postproxy) only after showing a preview and getting explicit approval.
 ---
 
 # Telegram Chat Digest
@@ -20,8 +20,11 @@ time window:
 - a one-to-three-line summary per chat
 - concrete action items (questions to answer, commitments made, deadlines)
 
-This skill is **strictly read-only**. It never sends, drafts into Telegram,
-edits, deletes, reacts, forwards, or marks messages as read.
+This skill is **read-only toward the user's chats**. It never sends, drafts
+into, edits, deletes, reacts to, forwards, or marks messages as read in any of
+the chats it summarizes. The only outbound action it may take is the optional
+*Bot delivery* step below, which sends the digest to the user themself and is
+gated by preview + explicit approval.
 
 ## When to use
 
@@ -117,8 +120,45 @@ Rules:
    Each item names its chat and the date of the source message.
 8. **Assemble the digest** using the output format below.
 9. **Offer next steps** without doing them: e.g. "Want me to draft replies for
-   the 3 chats waiting on you?" Drafting/sending belongs to an approval-gated
-   skill.
+   the 3 chats waiting on you?" Drafting/sending replies belongs to an
+   approval-gated skill.
+10. **Optional: bot delivery.** Only if the user asked for the digest on
+    Telegram. Follow *Bot delivery* exactly.
+
+## Bot delivery (optional, approval-gated)
+
+Delivers the digest to the user's own bot chat with `@My_cloude_1_Bot`, using
+the Postproxy MCP server. Never used to message anyone else.
+
+**One-time setup (done by the user, not the agent):**
+1. In Telegram, open `@My_cloude_1_Bot` and press **Start** (bots cannot
+   message someone who hasn't started them).
+2. Connect the bot to Postproxy: the agent may call
+   `mcp__Postproxy__profile_groups_initialize_connection` with
+   `platform: "telegram"` **only if the user supplies the bot token through
+   Postproxy's own connect page**. The agent never asks for, receives, stores,
+   or echoes the BotFather token in chat, files, or commits.
+
+**Each delivery:**
+
+| Step | Tool | Notes |
+|---|---|---|
+| 1. Find the bot profile | `mcp__Postproxy__profiles_list` | Pick the `telegram` profile for `@My_cloude_1_Bot`. None → stop, tell the user to finish setup. |
+| 2. Find the user's chat with the bot | `mcp__Postproxy__dm_chats_list` (`profile_id`) | Must be a 1:1 chat with the user. Several candidates or a group → stop and ask which one. |
+| 3. Preview | — (no tool call) | Show the exact message text, the target chat name, and the bot. Ask: "Send this to <chat> via @My_cloude_1_Bot?" |
+| 4. Approval | — | Proceed only on an explicit yes for **this** preview. Any edit → new preview. Silence, "ok?" or approval from an earlier run does not count. |
+| 5. Send | `mcp__Postproxy__dm_message_send` (`chat_id`, `body`) | Send exactly the previewed text. One call. No `reply_markup`, media, or retries without a new approval. |
+| 6. Confirm | `mcp__Postproxy__dm_messages_list` (`direction: "outbound"`) | Report `published`, `pending`, or `failed` truthfully. |
+
+Rules:
+- Telegram messages max out at 4096 characters. If the digest is longer, show
+  the split parts in the preview and get one approval covering all parts.
+- Strip anything redacted as `[credential redacted]` before sending — it stays
+  redacted.
+- Never use `dm_message_edit`, `dm_message_react`, or post tools from this
+  skill.
+- Bot chats are **not** a source for the digest: a bot only sees chats it is
+  in, not the user's personal conversations.
 
 ## Output format
 
@@ -156,7 +196,10 @@ say so in one line instead of producing empty sections.
 
 Before returning the digest, confirm:
 
-- [ ] No write, send, edit, react, forward, or mark-read call was made.
+- [ ] No write, send, edit, react, forward, or mark-read call was made on the
+      summarized chats.
+- [ ] If the digest was sent via the bot, it was the exact previewed text and
+      the user explicitly approved that preview.
 - [ ] No secrets or one-time codes appear in the output.
 - [ ] Every action item traces to a real message in the window.
 - [ ] The time window and any truncation are stated.
