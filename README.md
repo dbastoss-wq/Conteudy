@@ -1,2 +1,37 @@
-# Conteudy
-Googleads
+# Sabiá
+
+App Vite + rotas serverless da Vercel. O site conversa em `/api/chat`. O bot do Telegram entra em `/api/telegram`.
+
+## Variáveis de ambiente (Vercel → Settings → Environment Variables)
+
+| Variável | Obrigatória | O que é |
+|---|---|---|
+| `TELEGRAM_BOT_TOKEN` | sim | Token do bot, gerado no @BotFather |
+| `TELEGRAM_WEBHOOK_SECRET` | sim | Texto aleatório; protege o webhook e o `/api/setup` |
+| `SABIA_API_KEY` | sim | Chave da API de IA (padrão: xAI/Grok) |
+| `SABIA_API_URL` | não | Endpoint compatível com OpenAI (padrão `https://api.x.ai/v1/chat/completions`) |
+| `SABIA_MODEL` | não | Modelo (padrão `grok-4`) |
+| `SABIA_SYSTEM_PROMPT` | não | Personalidade do bot |
+| `SABIA_DAILY_LIMIT` | não | Mensagens por chat por dia (padrão 200) |
+| `SABIA_RATE_LIMIT_PER_MINUTE` | não | Mensagens por chat por minuto (padrão 12) |
+| `SABIA_MAX_OUTPUT_TOKENS` | não | Tamanho máximo da resposta (padrão 800) |
+
+Depois de criar ou mudar variáveis, faça **Redeploy**.
+
+## Ligar o bot
+
+Abra no navegador, uma vez:
+
+```
+https://SEU-DOMINIO/api/setup?key=SEU_TELEGRAM_WEBHOOK_SECRET
+```
+
+Isso registra o webhook em `https://SEU-DOMINIO/api/telegram`. Confira em `/api/health`.
+
+Alternativa pela linha de comando:
+
+```bash
+WEBHOOK_URL=https://SEU-DOMINIO/api/telegram npm run webhook
+```
+
+Não grave o token no repositório.
