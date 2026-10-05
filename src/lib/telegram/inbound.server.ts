@@ -1,6 +1,6 @@
-import { askSabia } from "../sabia/ask.server";
-import { assertWithinLimit, LimitError } from "../sabia/limits.server";
-import { sendTelegram } from "./send.server";
+import { askSabia } from "../sabia/ask.server.js";
+import { assertWithinLimit, LimitError } from "../sabia/limits.server.js";
+import { sendTelegram } from "./send.server.js";
 
 type TelegramMessage = {
   message_id: number;

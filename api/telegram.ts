@@ -1,4 +1,4 @@
-import { handleTelegramUpdate } from "../src/lib/telegram/inbound.server";
+import { handleTelegramUpdate } from "../src/lib/telegram/inbound.server.js";
 
 export const config = { maxDuration: 60 };
 
@@ -24,7 +24,7 @@ export default async function handler(req: any, res: any) {
     console.error("telegram", detail);
     const chatId = req.body?.message?.chat?.id ?? req.body?.edited_message?.chat?.id;
     if (chatId) {
-      const { sendTelegram } = await import("../src/lib/telegram/send.server");
+      const { sendTelegram } = await import("../src/lib/telegram/send.server.js");
       await sendTelegram(chatId, "Não consegui responder agora. Tenta de novo.").catch(() => undefined);
     }
     res.status(200).json({ ok: true });

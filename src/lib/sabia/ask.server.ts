@@ -1,4 +1,4 @@
-import type { SabiaMessage, SabiaTurn } from "./types";
+import type { SabiaMessage, SabiaTurn } from "./types.js";
 
 const DEFAULT_URL = "https://api.x.ai/v1/chat/completions";
 const DEFAULT_MODEL = "grok-4";

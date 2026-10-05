@@ -1,5 +1,5 @@
-import { askSabia } from "../src/lib/sabia/ask.server";
-import { assertWithinLimit } from "../src/lib/sabia/limits.server";
+import { askSabia } from "../src/lib/sabia/ask.server.js";
+import { assertWithinLimit } from "../src/lib/sabia/limits.server.js";
 
 export const config = { maxDuration: 60 };
 
