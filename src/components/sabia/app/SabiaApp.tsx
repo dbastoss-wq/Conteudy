@@ -6,6 +6,16 @@ export function SabiaApp() {
     if (typeof window === "undefined") return "/api/telegram";
     return `${window.location.origin}/api/telegram`;
   }, []);
+  // Dentro do Telegram (mini app) mostra só a conversa.
+  const inTelegram = typeof window !== "undefined" && window.location.hash.includes("tgWebApp");
+
+  if (inTelegram) {
+    return (
+      <div className="app mini">
+        <ChatPanel />
+      </div>
+    );
+  }
 
   return (
     <div className="app">

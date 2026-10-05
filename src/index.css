@@ -80,3 +80,6 @@ button { cursor: pointer; }
   .side { border-right: 0; border-bottom: 1px solid var(--line); }
   .thread, .composer, .err { padding-left: 16px; padding-right: 16px; }
 }
+.app.mini { grid-template-columns: 1fr; min-height: 100dvh; }
+.app.mini .main { min-height: 100dvh; }
+.app.mini .thread, .app.mini .composer, .app.mini .err { padding-left: 14px; padding-right: 14px; }
