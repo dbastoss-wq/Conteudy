@@ -18,7 +18,7 @@ export function SabiaApp() {
           </div>
         </div>
         <p className="note">
-          O mesmo cérebro responde aqui e no @AiSabiaBot. O Telegram entra por webhook; o site usa a rota de conversa.
+          O mesmo cérebro responde aqui e no @SabiaNewAibot. O Telegram entra por webhook; o site usa a rota de conversa.
         </p>
         <div className="hook">
           <div>Webhook</div>
