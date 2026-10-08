@@ -1,0 +1,1 @@
+`sabia-mark.svg` is the app icon from `public/favicon.svg`: the Sabiá bird in `gold` (#e7b15a) on a `mark-ground` (#14261c) tile with `radius-icon` corners, drawn at 32×32. It is two-color and self-contained, so it reads on any ground. Use it as the favicon and app icon; inside the UI the sidebar uses the ✦ glyph on a `moss` tile instead.

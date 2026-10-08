@@ -1,0 +1,23 @@
+{
+  "v": 3,
+  "layout": "files",
+  "createdOnFiles": { "v": 1, "at": "2026-10-08T01:07:31Z" },
+  "title": "Sabiá",
+  "namespace": "Sabia",
+  "libraries": [],
+  "sections": {},
+  "groups": ["Logos"],
+  "assetGroups": {
+    "Logos": {
+      "name": "Logos",
+      "tile": "l",
+      "order": ["sabia-mark.svg"],
+      "files": {
+        "sabia-mark.svg": { "name": "sabia-mark.svg", "blob": "b414e03a87e1748168b60858a1ab5767", "size": 245, "type": "image/svg+xml" }
+      }
+    }
+  },
+  "blobs": {},
+  "docs": { "readme": "project/README.md", "sections": [] },
+  "lastChange": { "by": "Claude", "at": "2026-10-08T01:07:31Z", "via": "GitHub · dbastoss-wq/Conteudy@26a0882", "note": "Extracted from the Sabiá app (branch dinho/wonderful-turing-3xs212): 14 colors, 7 text styles, 8 spacing steps, 5 radii, 5 sizes, 4 components, 1 mark." }
+}

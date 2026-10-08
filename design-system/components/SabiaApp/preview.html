@@ -1,0 +1,35 @@
+<!-- @dsCard group="App" height=520 width=1040 subtitle="Desktop, sidebar + conversation" -->
+<!doctype html>
+<html><body style="margin:0">
+<div class="app" style="min-height:520px;background:radial-gradient(900px 420px at 10% -10%, var(--moss) 0%, transparent 55%), var(--ink)">
+  <aside class="side">
+    <div class="mark">
+      <div class="bird" aria-hidden="true">✦</div>
+      <div>
+        <b>Sabiá</b>
+        <div><span>português, no site e no Telegram</span></div>
+      </div>
+    </div>
+    <p class="note">O mesmo cérebro responde aqui e no @SabiaNewAibot. O Telegram entra por webhook; o site usa a rota de conversa.</p>
+    <div class="hook">
+      <div>Webhook</div>
+      <code>https://sabia.example/api/telegram</code>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <h1>Conversa</h1>
+      <button class="ghost" type="button">Limpar</button>
+    </header>
+    <section class="thread" aria-live="polite" style="padding:28px 48px 12px">
+      <article class="bubble sabia">Pode mandar a pergunta. Se o bot do Telegram já estiver com o webhook, a mesma resposta sai por lá.</article>
+      <article class="bubble user">Qual a capital do Brasil?</article>
+      <article class="bubble sabia">Brasília.</article>
+    </section>
+    <form class="composer" style="padding:16px 48px 28px" onsubmit="return false">
+      <textarea placeholder="Escreve para a Sabiá"></textarea>
+      <button class="send" type="submit">Enviar</button>
+    </form>
+  </main>
+</div>
+</body></html>

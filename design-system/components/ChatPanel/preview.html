@@ -1,0 +1,19 @@
+<!-- @dsCard group="App" height=420 subtitle="With an error line" -->
+<!doctype html>
+<html><body style="margin:0;background:var(--ink)">
+<main class="main">
+  <header class="top">
+    <h1>Conversa</h1>
+    <button class="ghost" type="button">Limpar</button>
+  </header>
+  <section class="thread" aria-live="polite" style="padding:22px 22px 12px">
+    <article class="bubble sabia">Pode mandar a pergunta. Se o bot do Telegram já estiver com o webhook, a mesma resposta sai por lá.</article>
+    <article class="bubble user">Me explica o que é um webhook em duas frases.</article>
+  </section>
+  <p class="err" style="padding:0 22px">A Sabiá não respondeu.</p>
+  <form class="composer" style="padding:16px 22px 22px" onsubmit="return false">
+    <textarea placeholder="Escreve para a Sabiá"></textarea>
+    <button class="send" type="submit">Enviar</button>
+  </form>
+</main>
+</body></html>
