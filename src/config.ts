@@ -68,8 +68,21 @@ export type Config = z.infer<typeof schema>;
 
 let cached: Config | null = null;
 
+/**
+ * Carrega o .env (se existir) para o processo. Não sobrescreve variáveis já
+ * definidas no ambiente (Docker, PaaS), então produção continua mandando.
+ */
+function loadDotEnv(): void {
+  try {
+    process.loadEnvFile('.env');
+  } catch {
+    // sem .env: usa só o ambiente do processo
+  }
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (cached) return cached;
+  if (env === process.env) loadDotEnv();
   const parsed = schema.safeParse(env);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`).join('\n');
