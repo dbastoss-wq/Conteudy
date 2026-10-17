@@ -191,6 +191,9 @@ falsa e stores em memória):
 
 ## Deploy em produção
 
+> Primeira vez e sem experiência técnica? Siga o [passo a passo em linguagem simples](docs/PASSO-A-PASSO.md)
+> (servidor e domínio grátis, WhatsApp, Google e IA).
+
 ### Opção A — Docker Compose (app + banco + HTTPS)
 
 Numa VM com Docker e um domínio apontando para o IP dela (portas 80 e 443 abertas):
