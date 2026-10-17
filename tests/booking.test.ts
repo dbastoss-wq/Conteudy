@@ -85,3 +85,54 @@ describe('falha da API do Google', () => {
     expect(appointments.all).toHaveLength(1);
   });
 });
+
+describe('resposta do Google perdida depois de criar o evento', () => {
+  it('adota o evento já criado: confirma, grava uma vez e não duplica', async () => {
+    const calendar = new FakeCalendar();
+    calendar.timeoutAfterNextInsert();
+    const reservations = new InMemoryReservationStore();
+    const appointments = new InMemoryAppointmentStore();
+    const deps = { calendar, reservations, appointments };
+
+    const result = await bookAppointment(bookInput(), deps);
+
+    expect(result.status).toBe('booked');
+    expect(calendar.events.size).toBe(1);
+    expect(calendar.insertCalls).toBe(1);
+    expect(appointments.all).toHaveLength(1);
+  });
+
+  it('sem poder conferir na hora, a nova tentativa do mesmo pedido adota o evento (não diz "ocupado" nem cria outro)', async () => {
+    const calendar = new FakeCalendar();
+    calendar.timeoutAfterNextInsert({ breakLookup: true }); // Google também cai para a conferência
+    const reservations = new InMemoryReservationStore();
+    const appointments = new InMemoryAppointmentStore();
+    const deps = { calendar, reservations, appointments };
+
+    const first = await bookAppointment(bookInput(), deps);
+    expect(first.status).toBe('calendar_error');
+    expect(appointments.all).toHaveLength(0);
+    expect(calendar.events.size).toBe(1); // o evento existe no Google
+
+    calendar.setGetEventFails(false); // Google volta
+    const retry = await bookAppointment(bookInput(), deps);
+
+    expect(retry.status).toBe('booked');
+    expect(calendar.events.size).toBe(1);
+    expect(calendar.insertCalls).toBe(1);
+    expect(appointments.all).toHaveLength(1);
+  });
+
+  it('outro paciente não consegue o horário cujo evento já existe', async () => {
+    const calendar = new FakeCalendar();
+    const reservations = new InMemoryReservationStore();
+    const appointments = new InMemoryAppointmentStore();
+    const deps = { calendar, reservations, appointments };
+
+    await bookAppointment(bookInput({ conversationId: 'A', idempotencyKey: 'A|slot' }), deps);
+    const other = await bookAppointment(bookInput({ conversationId: 'B', idempotencyKey: 'B|slot' }), deps);
+
+    expect(other.status).toBe('slot_taken');
+    expect(calendar.events.size).toBe(1);
+  });
+});

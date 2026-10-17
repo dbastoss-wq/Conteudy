@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { DateTime, Interval } from 'luxon';
 import type { TimeInterval, PaymentMethod } from '../domain/types.js';
 
@@ -8,11 +9,18 @@ import type { TimeInterval, PaymentMethod } from '../domain/types.js';
 export interface CalendarPort {
   /** Intervalos ocupados entre timeMin e timeMax (ISO UTC). */
   freebusy(calendarId: string, timeMinISO: string, timeMaxISO: string): Promise<TimeInterval[]>;
-  /** Cria o evento. Lança em caso de falha da API. */
+  /**
+   * Cria o evento com o `id` informado. Deve ser idempotente: se já existir um
+   * evento com esse id, devolve-o em vez de falhar. Lança em caso de falha da API.
+   */
   insertEvent(calendarId: string, event: CalendarEventInput): Promise<CreatedEvent>;
+  /** Busca um evento pelo id; null se não existir ou estiver cancelado. */
+  getEvent(calendarId: string, eventId: string): Promise<CreatedEvent | null>;
 }
 
 export interface CalendarEventInput {
+  /** Id estável (hex minúsculo, aceito pelo Google): torna o insert idempotente. */
+  id: string;
   summary: string;
   description: string;
   startISO: string; // UTC
@@ -104,13 +112,21 @@ function overlaps(startISO: string, endISO: string, busy: TimeInterval[]): boole
   });
 }
 
+/** Id do evento no Google, derivado da chave de idempotência (hex: 64 chars, válido p/ o Google). */
+export function eventIdFor(idempotencyKey: string): string {
+  return createHash('sha256').update(idempotencyKey).digest('hex');
+}
+
 /**
  * Reserva uma consulta de forma segura:
  *  1. idempotência — se já existe agendamento para (conversa, slot), devolve-o;
  *  2. trava o slot (atômico) — se já travado, 'slot_taken';
- *  3. re-checa a disponibilidade no Google DENTRO da trava;
- *  4. cria o evento — só confirma se a API retornar sucesso;
- *  5. em qualquer falha, libera a trava e devolve o erro.
+ *  3. se o evento deste pedido já existe no Google (tentativa anterior cuja resposta
+ *     se perdeu), adota-o em vez de criar outro ou reportar "ocupado";
+ *  4. re-checa a disponibilidade no Google DENTRO da trava;
+ *  5. cria o evento com id estável — só confirma se a API retornar sucesso;
+ *  6. em falha, confere uma última vez se o evento chegou a ser criado (resposta
+ *     perdida); se não, libera a trava e devolve o erro.
  */
 export async function bookAppointment(
   input: BookInput,
@@ -131,25 +147,9 @@ export async function bookAppointment(
     return { status: 'slot_taken' };
   }
 
-  try {
-    // 3. Re-checagem imediatamente antes de gravar
-    const busy = await calendar.freebusy(input.calendarId, input.startISO, input.endISO);
-    if (overlaps(input.startISO, input.endISO, busy)) {
-      await reservations.release(key);
-      return { status: 'slot_taken' };
-    }
+  const eventId = eventIdFor(input.idempotencyKey);
 
-    // 4. Cria o evento — só confirma após sucesso
-    const description =
-      input.eventDescription ?? `Telefone: ${input.phone}\nMotivo: ${input.reason}`;
-    const event = await calendar.insertEvent(input.calendarId, {
-      summary: `Teleconsulta – ${input.patientName}`,
-      description,
-      startISO: input.startISO,
-      endISO: input.endISO,
-      timezone: input.timezone,
-    });
-
+  const record = async (event: CreatedEvent): Promise<BookResult> => {
     const appointment = await appointments.create({
       idempotencyKey: input.idempotencyKey,
       conversationId: input.conversationId,
@@ -163,10 +163,42 @@ export async function bookAppointment(
       timezone: input.timezone,
       paymentMethod: null,
     });
-
     return { status: 'booked', appointment, event };
+  };
+
+  try {
+    // 3. Evento deste mesmo pedido já criado numa tentativa anterior? Adota.
+    const already = await calendar.getEvent(input.calendarId, eventId);
+    if (already) return await record(already);
+
+    // 4. Re-checagem imediatamente antes de gravar
+    const busy = await calendar.freebusy(input.calendarId, input.startISO, input.endISO);
+    if (overlaps(input.startISO, input.endISO, busy)) {
+      await reservations.release(key);
+      return { status: 'slot_taken' };
+    }
+
+    // 5. Cria o evento (id estável => idempotente) — só confirma após sucesso
+    const description =
+      input.eventDescription ?? `Telefone: ${input.phone}\nMotivo: ${input.reason}`;
+    const event = await calendar.insertEvent(input.calendarId, {
+      id: eventId,
+      summary: `Teleconsulta – ${input.patientName}`,
+      description,
+      startISO: input.startISO,
+      endISO: input.endISO,
+      timezone: input.timezone,
+    });
+
+    return await record(event);
   } catch (err) {
-    // 5. Falha (ex.: API do Google fora do ar) — libera o slot para nova tentativa
+    // 6. Falha. Se foi só a resposta que se perdeu, o evento existe: adota.
+    try {
+      const created = await calendar.getEvent(input.calendarId, eventId);
+      if (created) return await record(created);
+    } catch {
+      // sem como confirmar agora; a próxima tentativa do mesmo pedido adota o evento
+    }
     await reservations.release(key);
     return { status: 'calendar_error', error: err instanceof Error ? err : new Error(String(err)) };
   }

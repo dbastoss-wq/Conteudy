@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { DateTime, Interval } from 'luxon';
 import type { CalendarPort, CalendarEventInput, CreatedEvent } from '../scheduling/booking.js';
 import type { TimeInterval } from '../domain/types.js';
@@ -8,14 +7,20 @@ import type { TimeInterval } from '../domain/types.js';
  * Permite:
  *  - semear intervalos ocupados;
  *  - simular falha da API do Google (failNextInsert / alwaysFail);
+ *  - simular resposta perdida DEPOIS de criar o evento (timeoutAfterNextInsert);
  *  - introduzir latência para exercitar concorrência.
+ * Como o Google, o insert é idempotente por id.
  */
 export class FakeCalendar implements CalendarPort {
   busy: TimeInterval[] = [];
   insertCalls = 0;
   freebusyCalls = 0;
+  readonly events = new Map<string, CalendarEventInput>();
   private failNext = false;
   private alwaysFail = false;
+  private timeoutAfterInsert = false;
+  private getEventFails = false;
+  private breakLookupOnTimeout = false;
   private insertDelayMs = 0;
 
   constructor(opts?: { busy?: TimeInterval[]; insertDelayMs?: number }) {
@@ -31,6 +36,20 @@ export class FakeCalendar implements CalendarPort {
 
   failNextInsert(): void {
     this.failNext = true;
+  }
+
+  /**
+   * O próximo insert CRIA o evento, mas a resposta se perde (timeout).
+   * Com `breakLookup`, a conferência (getEvent) também passa a falhar a partir daí.
+   */
+  timeoutAfterNextInsert(opts?: { breakLookup?: boolean }): void {
+    this.timeoutAfterInsert = true;
+    this.breakLookupOnTimeout = opts?.breakLookup ?? false;
+  }
+
+  /** getEvent passa a falhar (API indisponível), como o resto do Google. */
+  setGetEventFails(v: boolean): void {
+    this.getEventFails = v;
   }
 
   setAlwaysFail(v: boolean): void {
@@ -60,9 +79,23 @@ export class FakeCalendar implements CalendarPort {
       this.failNext = false;
       throw new Error('Google Calendar API indisponível (simulado)');
     }
-    this.insertCalls++;
-    // Passa a contar como ocupado para chamadas futuras de freebusy.
-    this.busy.push({ start: event.startISO, end: event.endISO });
-    return { id: randomUUID(), htmlLink: 'https://calendar.google.com/evento-fake' };
+    const created: CreatedEvent = { id: event.id, htmlLink: 'https://calendar.google.com/evento-fake' };
+    if (!this.events.has(event.id)) {
+      this.insertCalls++;
+      this.events.set(event.id, event);
+      // Passa a contar como ocupado para chamadas futuras de freebusy.
+      this.busy.push({ start: event.startISO, end: event.endISO });
+    }
+    if (this.timeoutAfterInsert) {
+      this.timeoutAfterInsert = false;
+      if (this.breakLookupOnTimeout) this.getEventFails = true;
+      throw new Error('timeout: resposta do Google perdida (simulado)');
+    }
+    return created;
+  }
+
+  async getEvent(_calendarId: string, eventId: string): Promise<CreatedEvent | null> {
+    if (this.alwaysFail || this.getEventFails) throw new Error('Google Calendar API indisponível (simulado)');
+    return this.events.has(eventId) ? { id: eventId } : null;
   }
 }
