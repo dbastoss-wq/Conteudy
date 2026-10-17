@@ -17,6 +17,44 @@ export function clearCapturedOutbound(): void {
 }
 
 /**
+ * Envia uma mensagem de template aprovado (única forma de falar fora da janela
+ * de 24h). `params` preenche as variáveis {{1}}, {{2}}... do corpo.
+ */
+export async function sendTemplate(to: string, name: string, lang: string, params: string[]): Promise<void> {
+  const cfg = loadConfig();
+
+  if (cfg.SIMULATE_WHATSAPP) {
+    capturedOutbound.push({ to, body: `[template ${name}] ${params.join(' | ')}`, at: new Date().toISOString() });
+    console.log(`\n[SIMULADO template ${name} → ${to}]\n${params.join(' | ')}\n`);
+    return;
+  }
+
+  const url = `https://graph.facebook.com/${cfg.WHATSAPP_API_VERSION}/${cfg.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${cfg.WHATSAPP_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'template',
+      template: {
+        name,
+        language: { code: lang },
+        components: [{ type: 'body', parameters: params.map((text) => ({ type: 'text', text })) }],
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`Falha ao enviar template WhatsApp (${res.status}): ${txt}`);
+  }
+}
+
+/**
  * Envia uma mensagem de texto pelo WhatsApp Business Cloud API (oficial).
  * Em modo de simulação, não chama a rede: registra no buffer e no console.
  */

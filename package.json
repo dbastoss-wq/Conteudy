@@ -13,6 +13,7 @@
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/seed.ts",
     "oauth:google": "tsx src/scripts/google-oauth.ts",
+    "setup:env": "tsx src/scripts/gen-env.ts",
     "sim": "tsx src/scripts/simulate.ts",
     "test": "vitest run",
     "test:watch": "vitest",

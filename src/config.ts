@@ -45,6 +45,10 @@ const schema = z.object({
   DOCTOR_NOTIFY_CHANNEL: z.enum(['whatsapp', 'email', 'both']).default('both'),
   DOCTOR_WHATSAPP_NUMBER: z.string().default(''),
   DOCTOR_EMAIL: z.string().default(''),
+  // Template de WhatsApp aprovado na Meta (1 variável de corpo, {{1}}) usado
+  // quando o texto livre é recusado por estar fora da janela de 24h.
+  DOCTOR_ALERT_TEMPLATE: z.string().default(''),
+  DOCTOR_ALERT_TEMPLATE_LANG: z.string().default('pt_BR'),
   SMTP_HOST: z.string().default(''),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_USER: z.string().default(''),

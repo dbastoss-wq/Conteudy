@@ -94,14 +94,19 @@ Copie `.env.example` para `.env` e preencha. Resumo:
 | Segurança | `JWT_SECRET`, `ENCRYPTION_KEY` (32 bytes base64), `ADMIN_EMAIL`, `ADMIN_PASSWORD` |
 | Negócio | `CONSULT_PRICE_CENTS` (7000), `PIX_KEY` |
 | LGPD | `DATA_RETENTION_DAYS` |
-| Alertas | `DOCTOR_NOTIFY_CHANNEL` (`both`), `DOCTOR_WHATSAPP_NUMBER`, `DOCTOR_EMAIL`, `SMTP_*` |
+| Alertas | `DOCTOR_NOTIFY_CHANNEL` (`both`), `DOCTOR_WHATSAPP_NUMBER`, `DOCTOR_EMAIL`, `DOCTOR_ALERT_TEMPLATE`, `SMTP_*` |
+| Deploy | `POSTGRES_PASSWORD`, `DOMAIN` |
 | Teste | `SIMULATE_WHATSAPP`, `SIMULATE_CALENDAR` |
 
-Gere a chave de criptografia:
+`npm run setup:env` cria o `.env` a partir do `.env.example` e gera sozinho
+`JWT_SECRET`, `ENCRYPTION_KEY`, `ADMIN_PASSWORD`, `POSTGRES_PASSWORD` e
+`WHATSAPP_VERIFY_TOKEN`. É idempotente: o que você já preencheu é mantido. Ele lista
+o que só você pode fornecer (tokens do WhatsApp, credenciais do Google, chave do LLM).
 
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
+**Alertas ao médico:** o WhatsApp só entrega texto livre dentro da janela de 24h da Meta.
+Se for recusado, o app usa o template configurado em `DOCTOR_ALERT_TEMPLATE` (aprovado
+na Meta, corpo com uma variável `{{1}}`) e, se também falhar, o e-mail — mesmo com
+`DOCTOR_NOTIFY_CHANNEL=whatsapp` —, para que um alerta de urgência não se perca.
 
 Os parâmetros de atendimento (dias, horários, duração **padrão 15 min**, intervalo,
 antecedência, agenda e textos das mensagens) ficam **no banco** e são editados pelo
@@ -118,8 +123,8 @@ docker compose up -d db
 # 2. Instale as dependências
 npm install
 
-# 3. Configure o .env (DATABASE_URL apontando para localhost:5432)
-cp .env.example .env && $EDITOR .env
+# 3. Gere o .env (cria os segredos sozinho; mantém o que você já preencheu)
+npm run setup:env && $EDITOR .env      # complete as credenciais externas
 
 # 4. Migre o banco e crie o admin inicial
 npm run migrate
@@ -186,16 +191,24 @@ falsa e stores em memória):
 
 ## Deploy em produção
 
-### Opção A — Docker Compose (app + banco)
+### Opção A — Docker Compose (app + banco + HTTPS)
+
+Numa VM com Docker e um domínio apontando para o IP dela (portas 80 e 443 abertas):
 
 ```bash
-cp .env.example .env    # preencha credenciais reais; SIMULATE_*=false
+npm ci && npm run setup:env        # gera .env com JWT_SECRET, ENCRYPTION_KEY, senhas e verify token
+$EDITOR .env                       # preencha DOMAIN e as credenciais externas (WhatsApp, Google, LLM)
 docker compose up -d --build
 docker compose run --rm app node dist/db/seed.js   # cria o admin (uma vez)
 ```
 
-O serviço `app` roda as migrações e sobe na porta 3000. Coloque um proxy HTTPS
-(Caddy/Nginx) na frente — o webhook da Meta exige HTTPS público.
+O Compose sobe três serviços: `db` (Postgres, só no loopback), `app` (roda as migrações
+e escuta na 3000, também só no loopback) e `caddy`, que obtém o certificado HTTPS
+sozinho para `DOMAIN` e repassa o tráfego ao app. O webhook da Meta fica em
+`https://SEU_DOMINIO/webhook`.
+
+> Faça backup do `ENCRYPTION_KEY`: sem ele, motivos de consulta e mensagens já gravados
+> não podem ser lidos.
 
 ### Opção B — Node direto (ex.: VM / PaaS)
 
