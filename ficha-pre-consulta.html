@@ -150,6 +150,14 @@ mark.pt { background: transparent; color: inherit; }
 .rx-sec p { margin: 0; white-space: pre-line; font-size: 14px; }
 .rx-sign { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--ink); width: min(260px, 100%); justify-self: end; text-align: center; font-size: 12px; color: var(--muted); }
 .rx-empty { color: var(--muted); font-size: 14px; margin: 0; }
+.rx-tag { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--warn); background: var(--warn-bg); border-radius: 99px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+.rx-note { font-size: 12px; color: var(--muted); margin: 0; }
+.rx-how { margin: 0 18px 4px; padding: 12px 14px 12px 32px; background: var(--accent-soft); border-radius: 8px; font-size: 13px; display: grid; gap: 4px; }
+.rx-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+details.office { border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+details.office summary { cursor: pointer; padding: 10px 12px; font-size: 13px; font-weight: 500; display: flex; justify-content: space-between; gap: 8px; }
+details.office summary span { color: var(--warn); font-weight: 400; }
+details.office .office-body { padding: 0 12px 12px; display: grid; gap: 10px; }
 
 .foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
 .toast { display: flex; gap: 10px; align-items: center; }
@@ -174,7 +182,7 @@ mark.pt { background: transparent; color: inherit; }
 
 <div class="wrap">
   <header class="top">
-    <div class="doc"><span class="mono">DB</span><div><b>Dr. Daniel Cardoso de Bastos</b><small>Clínico geral · CRM-SP 239894</small></div></div>
+    <div class="doc"><span class="mono">DB</span><div><b id="docTopNome">Dr. Daniel Cardoso de Bastos</b><small id="docTopReg">Clínico geral · CRM-SP 239894</small></div></div>
     <span class="chip-demo">Demonstração</span>
   </header>
 
@@ -289,9 +297,28 @@ mark.pt { background: transparent; color: inherit; }
 
         <fieldset data-step="4" hidden>
           <span class="who">Preenchido pelo médico</span>
+          <details class="office" id="office">
+            <summary>Dados do consultório na receita <span id="officeWarn"></span></summary>
+            <div class="office-body">
+              <span class="hint">Ficam salvos neste navegador e não são apagados por "Nova ficha".</span>
+              <div class="field"><label for="docNome">Nome</label><input type="text" id="docNome"></div>
+              <div class="row">
+                <div class="field"><label for="docEsp">Especialidade</label><input type="text" id="docEsp"></div>
+                <div class="field"><label for="docCRM">CRM/UF</label><input type="text" id="docCRM"></div>
+              </div>
+              <div class="field"><label for="docEnd">Endereço do consultório <span class="hint">obrigatório na receita</span></label><input type="text" id="docEnd" placeholder="Rua, número, bairro, cidade/UF"></div>
+              <div class="row">
+                <div class="field"><label for="docTel">Telefone ou email</label><input type="text" id="docTel"></div>
+                <div class="field"><label for="docCidade">Cidade da assinatura</label><input type="text" id="docCidade" placeholder="ex.: São Paulo"></div>
+              </div>
+            </div>
+          </details>
           <div class="field"><label for="hd">Hipótese diagnóstica</label><textarea id="hd"></textarea></div>
           <div class="field"><label for="conduta">Conduta e orientações dadas na consulta</label><textarea id="conduta"></textarea></div>
-          <div class="field"><label for="ptNome">Nome do paciente <span class="hint">sai só na receita</span></label><input type="text" id="ptNome"></div>
+          <div class="row">
+            <div class="field"><label for="ptNome">Nome do paciente <span class="hint">sai só na receita</span></label><input type="text" id="ptNome"></div>
+            <div class="field"><label for="ptEnd">Endereço do paciente <span class="hint">obrigatório na receita</span></label><input type="text" id="ptEnd"></div>
+          </div>
           <div class="field"><span class="lbl">Prescrição</span>
             <div class="rx-rows" id="rxRows"></div>
             <div><button class="btn small" type="button" id="rxAdd">+ Adicionar medicamento</button></div>
@@ -335,9 +362,18 @@ mark.pt { background: transparent; color: inherit; }
     <section class="panel" id="rxPanel" aria-labelledby="rh">
       <div class="panel-h"><h2 id="rh">Receituário</h2><span>rascunho</span></div>
       <div class="rx-sheet" id="rxSheet"></div>
+      <ol class="rx-how">
+        <li>Gere o PDF da receita.</li>
+        <li>Assine no seu assinador com o certificado ICP-Brasil, no formato PAdES.</li>
+        <li>Envie o PDF assinado ao paciente. A farmácia confere em validar.iti.gov.br.</li>
+      </ol>
       <div class="panel-f">
-        <span class="fine" id="rxMsg">Transcreva na plataforma de prescrição digital com assinatura ICP-Brasil.</span>
-        <button class="btn primary" type="button" id="rxCopyBtn">Copiar receita</button>
+        <span class="fine" id="rxMsg">O PDF sai sem assinatura. Ele só vale depois de assinado.</span>
+        <div class="rx-btns">
+          <button class="btn" type="button" id="rxCopyBtn">Copiar texto</button>
+          <button class="btn" type="button" id="exPdfBtn" hidden>PDF dos exames</button>
+          <button class="btn primary" type="button" id="rxPdfBtn">Gerar PDF da receita</button>
+        </div>
       </div>
       <div class="copybox" id="rxCopyBox" hidden><textarea id="rxCopyTxt" readonly aria-label="Receita para copiar"></textarea></div>
     </section>
@@ -349,12 +385,14 @@ mark.pt { background: transparent; color: inherit; }
   </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const DOCTOR = { nome: 'Dr. Daniel Cardoso de Bastos', reg: 'Clínico geral · CRM-SP 239894' };
+  const DOC_IDS = ['docNome','docEsp','docCRM','docEnd','docTel','docCidade'];
+  const DOC_DEF = { docNome: 'Dr. Daniel Cardoso de Bastos', docEsp: 'Clínico geral', docCRM: 'CRM-SP 239894', docEnd: '', docTel: '', docCidade: '' };
   const TEXT_IDS = ['idade','duracao','queixa','local','carater','contexto','piora','alivia','associados','negados','tentativas','hppTxt','medsTxt','alergTxt','prevTxt','expect',
-    'tcData','tcIni','tcFim','tcPlat','tcLocal','tcAcomp','vPA','vFC','vT','vSat','vGlic','vPeso','exTxt','hd','conduta','ptNome','orient','exames','retorno'];
+    'tcData','tcIni','tcFim','tcPlat','tcLocal','tcAcomp','vPA','vFC','vT','vSat','vGlic','vPeso','exTxt','hd','conduta','ptNome','ptEnd','orient','exames','retorno'];
   const RADIOS = ['sexo','inicio','evolucao','hpp','meds','alerg','prev','modal'];
   const CHIPS = ['Bom estado geral','Lúcido e orientado','Fala sem alterações','Eupneico em ar ambiente','Corado e hidratado','Acianótico e anictérico','Deambula sem auxílio','Sem sinais de sofrimento'];
   const VIAS = ['oral','tópico','sublingual','inalatório','nasal','oftálmico','otológico','retal','vaginal','intramuscular','subcutâneo'];
@@ -583,30 +621,54 @@ mark.pt { background: transparent; color: inherit; }
   }
 
   // ---------- Receituário ----------
+  const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const longDate = v => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? `${+m[3]} de ${MESES[+m[2] - 1]} de ${m[1]}` : ''; };
+  const docInfo = () => { const g = id => clean($(id).value); return { nome: g('docNome'), esp: g('docEsp'), crm: g('docCRM'), end: g('docEnd'), tel: g('docTel'), cidade: g('docCidade') }; };
   function rxModel(d, rx) {
     const meds = rx.filter(r => clean(r.med));
     const groups = [];
     meds.forEach(r => { let g = groups.find(x => x.via === r.via); if (!g) groups.push(g = { via: r.via, items: [] }); g.items.push(r); });
-    return { meds, groups, nome: clean(d.ptNome), data: fmtDate(d.tcData), orient: (d.orient || '').trim(),
-      exames: d.exames.split('\n').map(clean).filter(Boolean), retorno: clean(d.retorno), tele: d.modal === 'tele' };
+    return { meds, groups, doc: docInfo(), nome: clean(d.ptNome), end: clean(d.ptEnd), data: fmtDate(d.tcData), dataLonga: longDate(d.tcData),
+      atm: meds.some(r => r.atm), idade: ageTxt(d.idade), sexo: { m: 'masculino', f: 'feminino' }[d.sexo] || '',
+      orient: (d.orient || '').trim(), exames: d.exames.split('\n').map(clean).filter(Boolean), retorno: clean(d.retorno),
+      hd: clean(d.hd), tele: d.modal === 'tele' };
   }
+  function rxTodo(m) {
+    const t = [];
+    if (!m.meds.length) return t;
+    if (!m.doc.end) t.push('Endereço do consultório na receita');
+    if (!m.nome) t.push('Nome do paciente na receita');
+    if (!m.end) t.push('Endereço do paciente na receita');
+    if (m.atm && (!m.idade || !m.sexo)) t.push('Idade e sexo do paciente (antimicrobiano)');
+    m.meds.forEach((r, i) => { if (!clean(r.pos)) t.push('Posologia do item ' + (i + 1) + ' da receita'); });
+    return t;
+  }
+  const docLine2 = doc => [doc.esp, doc.crm].filter(Boolean).join(' · ');
+  const docLine3 = doc => [doc.end, doc.tel].filter(Boolean).join(' · ');
   function rxHtml(m) {
     let n = 0;
     const g = m.groups.map(gr => `<div class="rx-sec"><p class="rx-via">Uso ${esc(gr.via)}</p><ol class="rx-items">` + gr.items.map(r => {
       n++;
-      return `<li class="rx-item"><div class="rx-line"><span class="rx-num">${n}.</span><b>${esc(clean(r.med))}</b><span class="dots"></span><span class="q">${esc(clean(r.qtd) || '—')}</span></div>` +
+      return `<li class="rx-item"><div class="rx-line"><span class="rx-num">${n}.</span><b>${esc(clean(r.med))}${r.atm ? '<span class="rx-tag">antimicrobiano</span>' : ''}</b><span class="dots"></span><span class="q">${esc(clean(r.qtd) || '—')}</span></div>` +
         `<div class="rx-pos">${esc(clean(r.pos) ? S(clean(r.pos)) : 'Posologia a definir.')}</div></li>`;
     }).join('') + '</ol></div>').join('');
-    return `<div class="rx-head"><div><div class="n">${esc(DOCTOR.nome)}</div><small>${esc(DOCTOR.reg)}</small></div>` +
-      `<div class="rx-meta"><div><span>Paciente:</span> ${esc(m.nome || '—')}</div><div><span>Data:</span> ${esc(m.data || '—')}</div></div></div>` +
+    const doc = m.doc;
+    return `<div class="rx-head"><div><div class="n">${esc(doc.nome || '—')}</div><small>${esc(docLine2(doc))}</small><small>${esc(docLine3(doc) || 'Endereço do consultório não informado')}</small></div>` +
+      `<div class="rx-meta"><div><span>Paciente:</span> ${esc(m.nome || '—')}</div><div><span>Endereço:</span> ${esc(m.end || '—')}</div>` +
+      (m.atm ? `<div><span>Idade:</span> ${esc(m.idade || '—')} · <span>Sexo:</span> ${esc(m.sexo || '—')}</div>` : '') +
+      `<div><span>Data:</span> ${esc(m.data || '—')}</div></div></div>` +
       (g || '<p class="rx-empty">Nenhum medicamento prescrito. Adicione na etapa Conduta.</p>') +
       (m.orient ? `<div class="rx-sec"><h4>Orientações</h4><p>${esc(m.orient)}</p></div>` : '') +
-      (m.exames.length ? `<div class="rx-sec"><h4>Exames solicitados</h4><p>${esc(m.exames.join('\n'))}</p></div>` : '') +
       (m.retorno ? `<div class="rx-sec"><h4>Retorno</h4><p>${esc(cap(m.retorno))}</p></div>` : '') +
-      `<div class="rx-sign">${m.tele ? 'Assinatura digital ICP-Brasil' : 'Assinatura e carimbo'}</div>`;
+      (m.exames.length ? `<p class="rx-note">Exames solicitados saem em documento separado (${m.exames.length}).</p>` : '') +
+      (m.atm ? '<p class="rx-note">Receita de antimicrobiano: válida por 10 dias a partir da emissão.</p>' : '') +
+      `<div class="rx-sign">Assinatura digital ICP-Brasil</div>`;
   }
   function rxText(m) {
-    const L = [DOCTOR.nome, DOCTOR.reg, '', 'Paciente: ' + (m.nome || '—'), 'Data: ' + (m.data || '—'), ''];
+    const doc = m.doc;
+    const L = [doc.nome, docLine2(doc), docLine3(doc), '', 'Paciente: ' + (m.nome || '—'), 'Endereço: ' + (m.end || '—')];
+    if (m.atm) L.push('Idade: ' + (m.idade || '—') + ' · Sexo: ' + (m.sexo || '—'));
+    L.push('Data: ' + (m.data || '—'), '');
     let n = 0;
     m.groups.forEach(gr => {
       L.push('USO ' + gr.via.toUpperCase());
@@ -614,9 +676,76 @@ mark.pt { background: transparent; color: inherit; }
       L.push('');
     });
     if (m.orient) L.push('ORIENTAÇÕES', m.orient, '');
-    if (m.exames.length) L.push('EXAMES SOLICITADOS', ...m.exames, '');
-    if (m.retorno) L.push('Retorno: ' + cap(m.retorno));
-    return L.join('\n').trim();
+    if (m.retorno) L.push('Retorno: ' + m.retorno);
+    return L.filter((x, i) => x !== '' || L[i - 1] !== '').join('\n').trim();
+  }
+
+  // ---------- PDF para assinatura ----------
+  const slug = t => (t || 'paciente').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  function makePdf(kind) {
+    const J = window.jspdf && window.jspdf.jsPDF;
+    if (!J) { $('rxMsg').textContent = 'O gerador de PDF não carregou. Verifique a internet e recarregue a página.'; return; }
+    const m = rxm, doc = m.doc;
+    const pdf = new J({ unit: 'mm', format: 'a4' });
+    const L = 20, R = 190, W = R - L, BOTTOM = 275;
+    let y = 22;
+    const need = h => { if (y + h > BOTTOM) { pdf.addPage(); y = 22; } };
+    const text = (t, o = {}) => {
+      pdf.setFont('helvetica', o.bold ? 'bold' : 'normal'); pdf.setFontSize(o.size || 11);
+      const lh = o.lh || 5.4, x = o.x || L;
+      pdf.splitTextToSize(String(t), o.w || W - (x - L)).forEach(ln => { need(lh); pdf.text(ln, x, y); y += lh; });
+    };
+    text(doc.nome || '—', { bold: true, size: 15, lh: 7 });
+    if (docLine2(doc)) text(docLine2(doc), { size: 10, lh: 4.8 });
+    if (docLine3(doc)) text(docLine3(doc), { size: 10, lh: 4.8 });
+    y += 2; pdf.setLineWidth(0.6); pdf.line(L, y, R, y); y += 10;
+    text(kind === 'rx' ? 'RECEITUÁRIO' : 'SOLICITAÇÃO DE EXAMES', { bold: true, size: 12, lh: 8 });
+    text('Paciente: ' + (m.nome || '—'));
+    if (m.end) text('Endereço: ' + m.end);
+    if (kind === 'rx' && m.atm) text('Idade: ' + (m.idade || '—') + '     Sexo: ' + (m.sexo || '—'));
+    y += 5;
+    if (kind === 'rx') {
+      let n = 0;
+      m.groups.forEach(g => {
+        need(16); text('USO ' + g.via.toUpperCase(), { bold: true, size: 10, lh: 7 });
+        g.items.forEach(r => {
+          n++; need(14);
+          const q = clean(r.qtd);
+          pdf.setFont('helvetica', 'normal'); pdf.setFontSize(11);
+          const qw = q ? pdf.getTextWidth(q) : 0;
+          pdf.setFont('helvetica', 'bold');
+          const lines = pdf.splitTextToSize(n + '. ' + clean(r.med), W - qw - 10);
+          lines.forEach((ln, i) => {
+            need(5.6); pdf.setFont('helvetica', 'bold'); pdf.text(ln, L, y);
+            if (i === lines.length - 1 && q) {
+              const lw = pdf.getTextWidth(ln);
+              pdf.setLineDashPattern([0.3, 1.2], 0); pdf.setLineWidth(0.2); pdf.line(L + lw + 2, y - 0.8, R - qw - 2, y - 0.8); pdf.setLineDashPattern([], 0);
+              pdf.setFont('helvetica', 'normal'); pdf.text(q, R, y, { align: 'right' });
+            }
+            y += 5.6;
+          });
+          text((clean(r.pos) ? S(clean(r.pos)) : 'Posologia a definir.'), { x: L + 6 });
+          y += 3;
+        });
+        y += 2;
+      });
+      if (m.orient) { y += 2; text('ORIENTAÇÕES', { bold: true, size: 10, lh: 6.5 }); m.orient.split('\n').map(x => x.trim()).filter(Boolean).forEach(x => text(x)); }
+      if (m.retorno) { y += 3; text('Retorno: ' + m.retorno); }
+    } else {
+      if (m.hd) { text('Indicação clínica: ' + m.hd); y += 3; }
+      m.exames.forEach((e, i) => text((i + 1) + '. ' + e));
+    }
+    need(46); y = Math.max(y + 10, 226);
+    text([doc.cidade, m.dataLonga || m.data].filter(Boolean).join(', '));
+    y += 16; pdf.setLineWidth(0.3); pdf.line(R - 80, y, R, y); y += 5;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10);
+    pdf.text(doc.nome || '', R - 40, y, { align: 'center' }); y += 4.6;
+    pdf.text(doc.crm || '', R - 40, y, { align: 'center' }); y += 9;
+    text('Documento assinado digitalmente com certificado ICP-Brasil (MP nº 2.200-2/2001). Confira a assinatura em validar.iti.gov.br.', { size: 8.5, lh: 4 });
+    if (kind === 'rx' && m.atm) text('Receita de antimicrobiano: válida por 10 dias a partir da data de emissão.', { size: 8.5, lh: 4 });
+    const name = (kind === 'rx' ? 'receita-' : 'exames-') + slug(m.nome) + (m.data ? '-' + m.data.split('/').reverse().join('') : '') + '.pdf';
+    try { pdf.save(name); } catch (e) {}
+    $('rxMsg').textContent = `${name} gerado. Se o download não começar, você está na prévia do Claude, que bloqueia downloads: abra a ficha pelo arquivo no seu computador.`;
   }
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -625,7 +754,7 @@ mark.pt { background: transparent; color: inherit; }
 
   // ---------- Linhas da prescrição ----------
   let rx = [];
-  const blankRx = () => ({ med: '', via: 'oral', qtd: '', pos: '' });
+  const blankRx = () => ({ med: '', via: 'oral', qtd: '', pos: '', atm: false });
   function drawRx() {
     $('rxRows').innerHTML = rx.map((r, i) => `<div class="rx-row" data-i="${i}">
       <div class="rx-row-h"><b>Item ${i + 1}</b><button class="btn ghost small" type="button" data-del="${i}" aria-label="Remover item ${i + 1}">Remover</button></div>
@@ -635,9 +764,10 @@ mark.pt { background: transparent; color: inherit; }
         <div class="field"><label for="rxq${i}">Quantidade</label><input type="text" id="rxq${i}" data-f="qtd" value="${esc(r.qtd)}" placeholder="ex.: 10 comprimidos"></div>
       </div>
       <div class="field"><label for="rxp${i}">Posologia</label><textarea id="rxp${i}" data-f="pos" placeholder="ex.: Tomar 1 comprimido de 6/6 horas se dor, por até 5 dias">${esc(r.pos)}</textarea></div>
+      <label class="check"><input type="checkbox" id="rxa${i}" data-f="atm"${r.atm ? ' checked' : ''}>Antimicrobiano (exige idade e sexo; receita válida por 10 dias)</label>
     </div>`).join('');
   }
-  $('rxRows').addEventListener('input', e => { const row = e.target.closest('.rx-row'); if (row && e.target.dataset.f) rx[+row.dataset.i][e.target.dataset.f] = e.target.value; });
+  $('rxRows').addEventListener('input', e => { const row = e.target.closest('.rx-row'); if (row && e.target.dataset.f) rx[+row.dataset.i][e.target.dataset.f] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; });
   $('rxRows').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (b) { rx.splice(+b.dataset.del, 1); drawRx(); render(); } });
   $('rxAdd').onclick = () => { rx.push(blankRx()); drawRx(); render(); $('rxm' + (rx.length - 1)).focus(); };
 
@@ -673,7 +803,12 @@ mark.pt { background: transparent; color: inherit; }
       }
     }
     $('efH').textContent = med.efH;
-    const todo = [...med.todo, ...built.todo];
+    const doc = rxm.doc;
+    $('docTopNome').textContent = doc.nome || '—'; $('docTopReg').textContent = docLine2(doc);
+    $('officeWarn').textContent = doc.end ? '' : 'falta o endereço';
+    $('exPdfBtn').hidden = !rxm.exames.length;
+    $('rxPdfBtn').disabled = !rxm.meds.length;
+    const todo = [...med.todo.filter(t => !/^Nome do paciente|^Posologia/.test(t)), ...rxTodo(rxm), ...built.todo];
     $('todoList').innerHTML = todo.map(t => '<li>' + esc(t) + '</li>').join('');
     $('tabPend').textContent = todo.length;
     $('rxSheet').innerHTML = rxHtml(rxm);
@@ -740,7 +875,7 @@ mark.pt { background: transparent; color: inherit; }
     exTxt: 'Aponta dor em região lombar baixa, sem irradiação. Dor à flexão anterior do tronco na manobra guiada. Consegue ficar na ponta dos pés e sobre os calcanhares.',
     hd: 'Lombalgia mecânica aguda, sem sinais de alarme.',
     conduta: 'Analgesia, calor local e manutenção das atividades conforme tolerância. Orientado a procurar atendimento presencial se surgirem sinais de alarme.',
-    ptNome: 'João Exemplo da Silva',
+    ptNome: 'João Exemplo da Silva', ptEnd: 'Rua das Flores, 100, apto 12, São Paulo/SP',
     rx: [{ med: 'Dipirona 500 mg, comprimido', via: 'oral', qtd: '20 comprimidos', pos: 'Tomar 1 comprimido de 6/6 horas se dor, por até 5 dias' },
          { med: 'Ciclobenzaprina 5 mg, comprimido', via: 'oral', qtd: '7 comprimidos', pos: 'Tomar 1 comprimido à noite, por 7 dias' }],
     orient: 'Compressa morna na região lombar por 20 minutos, 3 vezes ao dia.\nEvite carregar peso por 1 semana.\nProcure atendimento presencial se tiver fraqueza nas pernas, perda de controle da urina ou febre.',
@@ -768,6 +903,12 @@ mark.pt { background: transparent; color: inherit; }
     try { navigator.clipboard.writeText(txt).then(ok, fail); } catch (e) { fail(); }
   }
   $('copyBtn').onclick = () => copy(evolText(), $('copyMsg'), $('copyBox'), $('copyTxt'), 'Evolução copiada. Cole no prontuário e revise antes de salvar.');
+  function loadDoc() { let st = {}; try { st = JSON.parse(localStorage.getItem('ficha.consultorio') || '{}') || {}; } catch (e) {} DOC_IDS.forEach(id => $(id).value = st[id] ?? DOC_DEF[id]); }
+  function saveDoc() { const st = {}; DOC_IDS.forEach(id => st[id] = $(id).value); try { localStorage.setItem('ficha.consultorio', JSON.stringify(st)); } catch (e) {} }
+  $('office').addEventListener('input', saveDoc);
+  loadDoc();
+  $('rxPdfBtn').onclick = () => makePdf('rx');
+  $('exPdfBtn').onclick = () => makePdf('ex');
   $('rxCopyBtn').onclick = () => copy(rxText(rxm), $('rxMsg'), $('rxCopyBox'), $('rxCopyTxt'), 'Receita copiada. Confira e assine na plataforma de prescrição digital.');
 
   fill(EX); last = {}; render(false); go(0);
