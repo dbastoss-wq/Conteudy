@@ -1,0 +1,12 @@
+services:
+  agent:
+    build: .
+    env_file: .env
+    ports:
+      - '127.0.0.1:8000:8000'
+    volumes:
+      - agent-data:/app/data
+      - ./knowledge:/app/knowledge:ro
+    restart: unless-stopped
+volumes:
+  agent-data:
