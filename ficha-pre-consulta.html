@@ -1,0 +1,534 @@
+<title>Ficha Pré-Consulta</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: prontuário em duas colunas — relato do paciente à esquerda, folha de evolução à direita; no celular vira abas */
+:root {
+  --bg: #F2F5F4; --surface: #FFFFFF; --ink: #16201D; --muted: #5C6A66; --line: #D9E1DE;
+  --accent: #1F6B5C; --accent-ink: #FFFFFF; --accent-soft: #E2EFEB;
+  --mark: #FFF0B8; --mark-ink: #4A3A00; --warn-bg: #FBF2E2; --warn: #7F5310; --err: #B3261E;
+  --display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1513; --surface: #161E1B; --ink: #E7EEEB; --muted: #95A39F; --line: #27322E;
+  --accent: #5CC2A8; --accent-ink: #08201A; --accent-soft: #17302A;
+  --mark: #4A3F12; --mark-ink: #FFE9A3; --warn-bg: #2C2414; --warn: #E8B865; --err: #FF8A80; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0F1513; --surface: #161E1B; --ink: #E7EEEB; --muted: #95A39F; --line: #27322E;
+  --accent: #5CC2A8; --accent-ink: #08201A; --accent-soft: #17302A;
+  --mark: #4A3F12; --mark-ink: #FFE9A3; --warn-bg: #2C2414; --warn: #E8B865; --err: #FF8A80; color-scheme: dark }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 20px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.doc { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mono { font-family: var(--display); font-size: 28px; color: var(--accent); line-height: 1; padding-right: 12px; border-right: 1px solid var(--line); }
+.doc b { display: block; font-weight: 600; }
+.doc small { color: var(--muted); font-size: 13px; }
+.chip-demo { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; }
+
+.intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(34px, 5vw, 48px); line-height: 1.05; margin: 4px 0 6px; text-wrap: balance; }
+.intro p { margin: 0; color: var(--muted); max-width: 60ch; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+button { font: inherit; cursor: pointer; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 9px 14px; font-weight: 500; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn:disabled { opacity: .4; cursor: default; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.tabs { display: none; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 4px; gap: 4px; }
+.tabs button { flex: 1; border: 0; background: transparent; color: var(--muted); padding: 9px; border-radius: 7px; font-weight: 500; }
+.tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--ink); }
+.pill { font-family: var(--mono); font-size: 11px; background: var(--warn-bg); color: var(--warn); padding: 1px 6px; border-radius: 99px; margin-left: 4px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+.panel-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 14px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.panel-h h2 { font-size: 16px; font-weight: 600; margin: 0; }
+.panel-h span { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 12px 18px 0; }
+.steps button { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 8px; padding: 8px; font-size: 13px; text-align: left; display: grid; gap: 2px; }
+.steps button i { font-style: normal; font-family: var(--mono); font-size: 11px; }
+.steps button[aria-current="step"] { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.steps button.done i::after { content: " ✓"; color: var(--accent); }
+
+form { padding: 16px 18px 4px; }
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 14px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: grid; gap: 6px; min-width: 0; }
+label, .lbl { font-size: 13px; font-weight: 500; }
+.hint { font-size: 12px; color: var(--muted); font-weight: 400; }
+input[type="text"], input[type="number"], textarea { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; }
+textarea { min-height: 64px; resize: vertical; }
+input:focus, textarea:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+.err { color: var(--err); font-size: 12px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg label { font-weight: 400; font-size: 13px; border: 1px solid var(--line); border-radius: 99px; padding: 6px 11px; cursor: pointer; background: var(--surface); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.range { display: grid; gap: 6px; }
+.range-top { display: flex; justify-content: space-between; align-items: center; }
+.range-top output { font-family: var(--mono); color: var(--accent); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.check { display: flex; align-items: center; gap: 8px; font-weight: 400; font-size: 13px; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.nav { display: flex; justify-content: space-between; padding: 14px 18px; border-top: 1px solid var(--line); margin-top: 16px; }
+
+/* Folha */
+.sheet { padding: 18px; display: grid; gap: 16px; }
+.block { display: grid; gap: 4px; border-radius: 6px; transition: background-color .9s; }
+.block h3 { margin: 0; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.block p { margin: 0; max-width: 72ch; }
+.block.flash { background: var(--accent-soft); transition: none; }
+.kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.kv dt { color: var(--muted); font-size: 13px; }
+.kv dd { margin: 0; min-width: 0; display: block; }
+mark.pt { background: transparent; color: inherit; }
+.show-pt mark.pt { background: var(--mark); color: var(--mark-ink); border-radius: 2px; padding: 0 1px; }
+.todo { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; }
+.todo b { font-size: 13px; }
+.todo ul { margin: 0; padding-left: 18px; font-size: 13px; display: grid; gap: 2px; }
+.fine { font-size: 12px; color: var(--muted); margin: 0; }
+.sheet-f { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-top: 1px solid var(--line); }
+#copyTxt { width: 100%; min-height: 160px; font-family: var(--mono); font-size: 12px; }
+
+.foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.toast { display: flex; gap: 10px; align-items: center; }
+.toast button { border: 0; background: none; color: var(--accent); font-weight: 600; padding: 0; }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .tabs { display: flex; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+  .grid[data-view="relato"] #sheetPanel, .grid[data-view="rascunho"] #formPanel { display: none; }
+  .kv { grid-template-columns: 1fr; gap: 2px; }
+  .kv dd { margin-bottom: 8px; }
+}
+@media (max-width: 520px) { .row { grid-template-columns: 1fr; } .steps button { font-size: 12px; } }
+@media (prefers-reduced-motion: reduce) { .block { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="doc"><span class="mono">DB</span><div><b>Dr. Daniel Cardoso de Bastos</b><small>Clínico geral · CRM-SP 239894</small></div></div>
+    <span class="chip-demo">Demonstração</span>
+  </header>
+
+  <div class="intro">
+    <div>
+      <div class="eyebrow">Ficha pré-consulta</div>
+      <h1>Do relato do paciente à HPMA</h1>
+      <p>O paciente conta com as próprias palavras. A folha ao lado monta a QD e a HPMA em narrativa clínica, na terceira pessoa, pronta para revisão.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="exBtn" type="button">Carregar exemplo</button>
+      <button class="btn" id="newBtn" type="button">Nova ficha</button>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Alternar painel">
+    <button type="button" role="tab" id="tabRelato" aria-selected="true">Relato</button>
+    <button type="button" role="tab" id="tabRascunho" aria-selected="false">Rascunho<span class="pill" id="tabPend">0</span></button>
+  </div>
+
+  <main class="grid" id="grid" data-view="relato">
+    <section class="panel" id="formPanel" aria-labelledby="fh">
+      <div class="panel-h"><h2 id="fh">Relato do paciente</h2><span id="stepLbl">Etapa 1 de 3</span></div>
+      <div class="steps" id="steps">
+        <button type="button" data-step="0" aria-current="step"><i>01</i>Queixa</button>
+        <button type="button" data-step="1"><i>02</i>Evolução</button>
+        <button type="button" data-step="2"><i>03</i>Contexto</button>
+      </div>
+      <form id="f" novalidate>
+        <fieldset data-step="0">
+          <div class="row">
+            <div class="field"><label for="idade">Idade <span class="hint">anos</span></label><input type="number" id="idade" inputmode="numeric" min="0" max="120"><span class="err" id="idadeErr" hidden>Informe a idade em anos completos, entre 0 e 120.</span></div>
+            <div class="field"><label for="duracao">Há quanto tempo?</label><input type="text" id="duracao" placeholder="ex.: há 5 dias"></div>
+          </div>
+          <div class="field"><span class="lbl">Sexo</span>
+            <div class="seg"><label><input type="radio" name="sexo" value="ni" checked>Prefiro não informar</label><label><input type="radio" name="sexo" value="f">Feminino</label><label><input type="radio" name="sexo" value="m">Masculino</label></div></div>
+          <div class="field"><label for="queixa">O que motivou a consulta? <span class="hint">com suas palavras</span></label><textarea id="queixa"></textarea></div>
+          <div class="row">
+            <div class="field"><label for="local">Onde sente?</label><input type="text" id="local"></div>
+            <div class="field"><label for="carater">Como é a sensação?</label><input type="text" id="carater"></div>
+          </div>
+          <div class="range">
+            <div class="range-top"><label for="int">Intensidade do incômodo</label><output id="intOut">não informada</output></div>
+            <input type="range" id="int" min="0" max="10" value="5" disabled>
+            <label class="check"><input type="checkbox" id="intOn">Quero informar a intensidade (0 = nenhuma, 10 = máxima)</label>
+          </div>
+        </fieldset>
+
+        <fieldset data-step="1" hidden>
+          <div class="field"><span class="lbl">Como começou?</span>
+            <div class="seg"><label><input type="radio" name="inicio" value="ni" checked>Não informado</label><label><input type="radio" name="inicio" value="gradual">Aos poucos</label><label><input type="radio" name="inicio" value="subito">De repente</label><label><input type="radio" name="inicio" value="ns">Não sei precisar</label></div></div>
+          <div class="field"><span class="lbl">Como está evoluindo?</span>
+            <div class="seg"><label><input type="radio" name="evolucao" value="ni" checked>Não informado</label><label><input type="radio" name="evolucao" value="melhora">Melhorando</label><label><input type="radio" name="evolucao" value="piora">Piorando</label><label><input type="radio" name="evolucao" value="estavel">Sem mudança</label><label><input type="radio" name="evolucao" value="intermitente">Vai e volta</label><label><input type="radio" name="evolucao" value="ns">Não sei precisar</label></div></div>
+          <div class="field"><label for="contexto">O que acontecia quando começou?</label><textarea id="contexto"></textarea></div>
+          <div class="row">
+            <div class="field"><label for="piora">O que piora?</label><textarea id="piora"></textarea></div>
+            <div class="field"><label for="alivia">O que alivia?</label><textarea id="alivia"></textarea></div>
+          </div>
+          <div class="field"><label for="associados">Sentiu mais alguma coisa?</label><textarea id="associados"></textarea></div>
+          <div class="field"><label for="negados">Algum sintoma que você tem certeza de que <em>não</em> tem?</label><textarea id="negados" placeholder="ex.: febre, falta de ar"></textarea></div>
+          <div class="field"><label for="tentativas">O que já tentou? Como respondeu?</label><textarea id="tentativas"></textarea></div>
+        </fieldset>
+
+        <fieldset data-step="2" hidden>
+          <div class="field"><span class="lbl">Tem doenças ou cirurgias prévias?</span>
+            <div class="seg"><label><input type="radio" name="hpp" value="ni" checked>Não sei</label><label><input type="radio" name="hpp" value="nao">Não tenho</label><label><input type="radio" name="hpp" value="sim">Tenho, vou informar</label></div>
+            <textarea id="hppTxt" placeholder="Quais doenças ou cirurgias?" hidden></textarea></div>
+          <div class="field"><span class="lbl">Usa medicamentos regularmente?</span>
+            <div class="seg"><label><input type="radio" name="meds" value="ni" checked>Não sei</label><label><input type="radio" name="meds" value="nao">Não uso</label><label><input type="radio" name="meds" value="sim">Uso, vou informar</label></div>
+            <textarea id="medsTxt" placeholder="Nomes, doses e horários, se souber" hidden></textarea></div>
+          <div class="field"><span class="lbl">Tem alergias?</span>
+            <div class="seg"><label><input type="radio" name="alerg" value="ni" checked>Não sei</label><label><input type="radio" name="alerg" value="nao">Não tenho alergias conhecidas</label><label><input type="radio" name="alerg" value="sim">Tenho, vou informar</label></div>
+            <textarea id="alergTxt" placeholder="A qual substância e que reação teve?" hidden></textarea></div>
+          <div class="field"><span class="lbl">Isso já aconteceu antes?</span>
+            <div class="seg"><label><input type="radio" name="prev" value="ni" checked>Não sei</label><label><input type="radio" name="prev" value="nao">Primeira vez</label><label><input type="radio" name="prev" value="sim">Já aconteceu</label></div>
+            <textarea id="prevTxt" placeholder="Quando e como foi?" hidden></textarea></div>
+          <div class="field"><label for="expect">O que espera resolver na consulta?</label><textarea id="expect"></textarea></div>
+        </fieldset>
+      </form>
+      <div class="nav">
+        <button class="btn ghost" type="button" id="backBtn" disabled>← Voltar</button>
+        <button class="btn primary" type="button" id="nextBtn">Continuar →</button>
+      </div>
+    </section>
+
+    <section class="panel" id="sheetPanel" aria-labelledby="sh">
+      <div class="panel-h"><h2 id="sh">Folha para o médico</h2>
+        <label class="check"><input type="checkbox" id="hl" checked>Destacar palavras do paciente</label></div>
+      <div class="sheet show-pt" id="sheet" aria-live="polite">
+        <div class="block" data-k="qd"><h3>QD</h3><p id="qd"></p></div>
+        <div class="block" data-k="hpma"><h3>HPMA</h3><p id="hpma"></p></div>
+        <dl class="kv">
+          <dt>Antecedentes</dt><dd class="block" data-k="hpp" id="hpp"></dd>
+          <dt>Medicações em uso</dt><dd class="block" data-k="meds" id="meds"></dd>
+          <dt>Alergias</dt><dd class="block" data-k="alerg" id="alerg"></dd>
+          <dt>Expectativa</dt><dd class="block" data-k="exp" id="exp"></dd>
+        </dl>
+        <div class="todo" id="todo"><b>A confirmar na consulta</b><ul id="todoList"></ul></div>
+        <p class="fine">Sinais vitais e exame físico: não avaliados nesta ficha. Rascunho gerado a partir das respostas, sujeito a revisão médica.</p>
+      </div>
+      <div class="sheet-f">
+        <span class="fine" id="copyMsg">Trechos destacados vieram das palavras do paciente.</span>
+        <button class="btn primary" type="button" id="copyBtn">Copiar para o prontuário</button>
+      </div>
+      <div style="padding:0 18px 18px" id="copyBox" hidden><textarea id="copyTxt" readonly aria-label="Texto para copiar"></textarea></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Use dados fictícios. Nada é enviado: tudo fica neste navegador.</span>
+    <span class="toast" id="toast" hidden><span id="toastMsg"></span><button type="button" id="undoBtn">Desfazer</button></span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const TEXT_IDS = ['idade','duracao','queixa','local','carater','contexto','piora','alivia','associados','negados','tentativas','hppTxt','medsTxt','alergTxt','prevTxt','expect'];
+  const RADIOS = ['sexo','inicio','evolucao','hpp','meds','alerg','prev'];
+  const radio = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || 'ni';
+
+  // ---------- Linguagem: 1ª pessoa → 3ª pessoa ----------
+  const PRON = { eu: '', me: 'se', meu: 'seu', minha: 'sua', meus: 'seus', minhas: 'suas', comigo: 'consigo', mim: 'si' };
+  const VERB = { estou:'está', sou:'é', tenho:'tem', tive:'teve', sinto:'sente', senti:'sentiu', fui:'foi', fiz:'fez', 'faço':'faz',
+    posso:'pode', pude:'pôde', consigo:'consegue', consegui:'conseguiu', tomo:'toma', acho:'acha', durmo:'dorme', dormi:'dormiu',
+    comi:'comeu', bebo:'bebe', bebi:'bebeu', preciso:'precisa', quero:'quer', sei:'sabe', vou:'vai', fico:'fica', tento:'tenta',
+    levanto:'levanta', deito:'deita', ando:'anda', lembro:'lembra', percebi:'percebeu', carrego:'carrega', vejo:'vê', vi:'viu',
+    dei:'deu', saio:'sai', 'saí':'saiu', sofro:'sofre', sofri:'sofreu', moro:'mora', tusso:'tosse', tossi:'tossiu', 'caí':'caiu',
+    caio:'cai', corri:'correu', corro:'corre', perdi:'perdeu', bati:'bateu', bato:'bate', estive:'esteve', nasci:'nasceu',
+    descobri:'descobriu', esqueci:'esqueceu', 'esqueço':'esquece', escuto:'escuta', 'ouço':'ouve', ouvi:'ouviu', subo:'sobe',
+    subi:'subiu', 'desço':'desce', desci:'desceu', venho:'vem', vim:'veio', melhoro:'melhora', pioro:'piora', costumo:'costuma',
+    evito:'evita', canso:'cansa', urino:'urina', evacuo:'evacua', engoli:'engoliu', engulo:'engole', respiro:'respira',
+    mexo:'mexe', mexi:'mexeu', uso:'usa', trabalho:'trabalha', caminho:'caminha', passo:'passa', fumo:'fuma', acordo:'acorda', gosto:'gosta' };
+  const NOUNISH = new Set(['uso','trabalho','caminho','passo','fumo','acordo','gosto']);
+  const DET = new Set(['o','os','a','as','um','uma','de','do','da','dos','das','no','na','nos','nas','em','ao','à','seu','sua','meu','minha',
+    'sem','com','para','pra','pro','pelo','pela','este','esse','esta','essa','bom','mau','muito','pouco','novo','num','numa','nesse','neste']);
+  const EI_EXC = new Set(['lei','rei','sei','dei','hei','grei']);
+  const LEAD = new Set(['se','não','nunca','já','também','ainda','sempre','só']);
+  const WORD = /[A-Za-zÀ-ÿ]+/g;
+
+  function conv(t) {
+    const toks = [];
+    let out = t.replace(WORD, (w, off, str) => {
+      const lw = w.toLowerCase();
+      let r = null, verb = false;
+      if (lw in PRON) r = PRON[lw];
+      else if (lw in VERB) {
+        const prev = (str.slice(0, off).match(/([A-Za-zÀ-ÿ]+)[^A-Za-zÀ-ÿ]*$/) || [])[1];
+        if (!(NOUNISH.has(lw) && prev && DET.has(prev.toLowerCase()))) { r = VERB[lw]; verb = true; }
+      } else if (/^[a-zç]{2,}ei$/.test(lw) && !EI_EXC.has(lw)) {
+        r = lw.replace(/quei$/, 'cou').replace(/guei$/, 'gou').replace(/cei$/, 'çou').replace(/ei$/, 'ou'); verb = true;
+      }
+      const res = r === null ? w : (r && w[0] !== w[0].toLowerCase() ? r[0].toUpperCase() + r.slice(1) : r);
+      if (res) toks.push({ w: res.toLowerCase(), verb });
+      return res;
+    });
+    out = out.replace(/\s{2,}/g, ' ').replace(/\s+([,.;:!?])/g, '$1').replace(/^[\s,;]+/, '').trim();
+    const v = !!toks[0] && (toks[0].verb || (LEAD.has(toks[0].w) && !!toks[1] && toks[1].verb));
+    return { t: out, v };
+  }
+
+  const clean = t => (t || '').replace(/\s+/g, ' ').trim().replace(/[\s.;,!]+$/, '');
+  const lc = t => (t.length > 1 && t[1] === t[1].toLowerCase()) ? t[0].toLowerCase() + t.slice(1) : t;
+  const cap = t => t ? t[0].toUpperCase() + t.slice(1) : t;
+  const sents = t => clean(t).split(/(?<=[.!?])\s+/).map(clean).filter(Boolean);
+  const first = t => ((t.match(WORD) || [''])[0]).toLowerCase();
+  const P = t => '\u0001' + t + '\u0002';            // marca trecho vindo do paciente
+  const S = t => { t = t.trim(); if (!t) return ''; if (t[0] === '\u0001') t = '\u0001' + cap(t.slice(1)); else t = cap(t); return /[.!?]\u0002?$/.test(t) ? t : t + '.'; };
+  const extra = arr => arr.slice(1).map(x => S(P(conv(x).t)));
+
+  const NOUN_R = new Set(['dor','calor','ar','lugar','amor','cor','odor','vapor','suor','sabor','açúcar','tremor','humor','temor','vigor','pior','maior',
+    'menor','melhor','mulher','colher','prazer','jantar','mar','bar','par','flor','motor','ventilador','computador','celular','elevador','lombar','muscular','familiar']);
+  const isInf = w => w.length > 3 && /(ar|er|ir|or)$/.test(w) && !NOUN_R.has(w);
+  const CIRC = new Set(['ao','aos','à','às','quando','após','depois','durante','com','sem','pela','pelo','no','na','nos','nas','em','se','toda','todo','sempre','de','enquanto','logo','antes']);
+  const LOCP = new Set(['em','no','na','nos','nas','entre','atrás','acima','abaixo','embaixo','perto','ao','à','por','de','do','da','pelo','pela','dentro','fora','sobre','sob','todo','toda']);
+  const TEMP = new Set(['após','depois','quando','durante','ao','enquanto','logo','antes','no','na','em']);
+
+  function circ(t, nounPrep) {
+    const w = first(t);
+    if (CIRC.has(w)) return t;
+    if (isInf(w)) return 'ao ' + t;
+    return nounPrep + ' ' + t;
+  }
+  function durPhrase(t) {
+    t = lc(clean(t)); if (!t) return '';
+    if (/^há(?![A-Za-zÀ-ÿ])/.test(t)) return 'iniciado ' + P(t);
+    if (/^(desde|a partir)(?![A-Za-zÀ-ÿ])/.test(t)) return 'presente ' + P(t);
+    if (/^(ontem|anteontem|hoje)(?![A-Za-zÀ-ÿ])/.test(t)) return 'iniciado ' + P(t);
+    if (/^(\d|(um|uma|dois|duas|três|quatro|cinco|seis|sete|oito|nove|dez|alguns|algumas|poucos|poucas|vários|várias|mais|menos|cerca|uns|umas|quase)(?![A-Za-zÀ-ÿ]))/.test(t)) return 'iniciado há ' + P(t);
+    return 'com tempo de evolução referido como ' + P(t);
+  }
+  function durShort(t) {
+    t = lc(clean(t)); if (!t) return '';
+    if (/^(há|desde|a partir|ontem|anteontem|hoje)(?![A-Za-zÀ-ÿ])/.test(t)) return t;
+    if (/^\d/.test(t)) return 'há ' + t;
+    return '(' + t + ')';
+  }
+  function ageTxt(v) {
+    if (v === '' || isNaN(+v)) return '';
+    const n = Math.floor(+v);
+    if (n < 0 || n > 120) return '';
+    return n === 0 ? 'menos de 1 ano' : n === 1 ? '1 ano' : n + ' anos';
+  }
+
+  // ---------- Montagem da folha ----------
+  function build(d) {
+    const out = [];
+    let who = 'Paciente' + (d.sexo === 'm' ? ' do sexo masculino' : d.sexo === 'f' ? ' do sexo feminino' : '');
+    const age = ageTxt(d.idade);
+    if (age) who += ', ' + age + ',';
+    const q = sents(d.queixa);
+    if (q.length) {
+      const c = conv(q[0]);
+      out.push(who + (c.v ? ' procura atendimento pois ' : ' procura atendimento por ') + P(lc(c.t)) + '.', ...extra(q));
+    } else out.push(who + ' procura atendimento.');
+
+    const pieces = [];
+    const dp = durPhrase(d.duracao); if (dp) pieces.push(dp);
+    const ini = { gradual: 'de início gradual', subito: 'de início súbito', ns: 'sem modo de início precisado' }[d.inicio];
+    if (ini) pieces.push(ini);
+    const cx = sents(d.contexto); let cxSent = [];
+    if (cx.length) {
+      const c = conv(cx[0]); let t = lc(c.t).replace(/^depois de\b/i, 'após');
+      if (c.v) cxSent.push(S('Relata que ' + P(t)));
+      else if (TEMP.has(first(t))) pieces.push((pieces.length ? '' : 'iniciado ') + P(t));
+      else pieces.push('relacionado a ' + P(t));
+      cxSent.push(...extra(cx));
+    }
+    if (pieces.length) out.push(S('Quadro ' + pieces.join(', ')));
+    out.push(...cxSent);
+
+    const lp = [];
+    const loc = clean(d.local);
+    if (loc) { const t = lc(conv(loc).t); lp.push('localizada ' + (LOCP.has(first(t)) ? '' : 'em ') + P(t)); }
+    const car = clean(d.carater);
+    if (car) lp.push('descrita como ' + P(lc(conv(car).t)));
+    if (d.intOn) lp.push('com intensidade ' + d.int + '/10');
+    if (lp.length) out.push(S('Queixa ' + lp.join(', ')));
+
+    const ev = { melhora: 'Refere melhora progressiva desde o início.', piora: 'Refere piora progressiva desde o início.',
+      estavel: 'Desde o início, mantém-se estável.', intermitente: 'Evolui de forma intermitente, com períodos de melhora e piora.',
+      ns: 'Não sabe precisar a evolução.' }[d.evolucao];
+    if (ev) out.push(ev);
+
+    const fp = [];
+    const pi = sents(d.piora), al = sents(d.alivia), more = [];
+    if (pi.length) { const c = conv(pi[0]); fp.push(c.v ? null : 'piora ' + P(circ(lc(c.t), 'com'))); if (c.v) more.push(S(P(c.t))); more.push(...extra(pi)); }
+    if (al.length) { const c = conv(al[0]); fp.push(c.v ? null : 'melhora ' + P(circ(lc(c.t), 'com'))); if (c.v) more.push(S(P(c.t))); more.push(...extra(al)); }
+    const fpx = fp.filter(Boolean);
+    if (fpx.length) out.push(S(fpx.join('; ')));
+    out.push(...more);
+
+    const as = sents(d.associados);
+    if (as.length) { const c = conv(as[0]); out.push(S('Refere ainda ' + (c.v ? 'que ' : '') + P(lc(c.t))), ...extra(as)); }
+
+    const ng = clean(d.negados);
+    if (ng) {
+      let t = conv(ng).t.replace(/^(não|nao)\s+(tem|teve|sente|sentiu|apresenta|apresentou)\s+/i, '').replace(/^(não|nao)\s+/i, '');
+      out.push(S('Nega ' + P(lc(clean(t.replace(/(^|\s)nem(?=\s)/gi, '$1e'))))));
+    }
+
+    const tt = sents(d.tentativas);
+    tt.forEach((x, i) => {
+      const c = conv(x);
+      if (i === 0 && !c.v) out.push(S((isInf(first(c.t)) ? 'Já tentou ' : 'Já utilizou ') + P(lc(c.t))));
+      else out.push(S(P(c.t)));
+    });
+
+    if (d.prev === 'nao') out.push('Nega episódios semelhantes prévios.');
+    if (d.prev === 'sim') { const t = clean(d.prevTxt); out.push(S('Relata episódios semelhantes prévios' + (t ? ': ' + P(lc(conv(t).t)) : ''))); }
+
+    const qd = q.length ? '“' + P(clean(q[0])) + '”' + (durShort(d.duracao) ? ' ' + durShort(d.duracao) : '') + '.' : '';
+
+    const list = (st, txt, nao) => st === 'sim' ? (clean(txt) ? S(P(clean(txt))) : 'Refere ter, sem especificar.') : st === 'nao' ? nao : 'Não informado.';
+    const hpp = list(d.hpp, d.hppTxt, 'Nega doenças e cirurgias prévias.');
+    const meds = list(d.meds, d.medsTxt, 'Nega uso regular de medicações.');
+    const alerg = list(d.alerg, d.alergTxt, 'Nega alergias conhecidas.');
+    const exp = clean(d.expect) ? S(P(conv(clean(d.expect)).t)) : 'Não informada.';
+
+    const todo = [];
+    if (!age) todo.push('Idade');
+    if (!clean(d.duracao)) todo.push('Tempo de evolução');
+    if (d.inicio === 'ni' || d.inicio === 'ns') todo.push('Modo de início');
+    if (!loc) todo.push('Localização');
+    if (!car) todo.push('Característica da queixa');
+    if (!d.intOn) todo.push('Intensidade');
+    if (d.evolucao === 'ni' || d.evolucao === 'ns') todo.push('Evolução do quadro');
+    if (!pi.length && !al.length) todo.push('Fatores de piora e melhora');
+    if (d.prev === 'ni') todo.push('Episódios prévios');
+    if (d.hpp === 'ni') todo.push('Antecedentes pessoais');
+    if (d.meds === 'ni') todo.push('Medicações em uso');
+    if (d.alerg === 'ni' || (d.alerg === 'sim' && !clean(d.alergTxt))) todo.push('Alergias e tipo de reação');
+    todo.push('Sinais de alarme pertinentes à queixa');
+
+    return { qd: qd || 'Não informada.', hpma: out.filter(Boolean).join(' '), hpp, meds, alerg, exp, todo };
+  }
+
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const toHtml = s => esc(s).replace(/\u0001/g, '<mark class="pt">').replace(/\u0002/g, '</mark>');
+  const plain = s => s.replace(/[\u0001\u0002]/g, '');
+
+  function data() {
+    const d = {};
+    TEXT_IDS.forEach(id => d[id] = $(id).value);
+    RADIOS.forEach(n => d[n] = radio(n));
+    d.intOn = $('intOn').checked; d.int = $('int').value;
+    return d;
+  }
+
+  let last = {}, built = null;
+  function render(flash = true) {
+    const d = data();
+    ['hpp', 'meds', 'alerg', 'prev'].forEach(n => $(n + 'Txt').hidden = d[n] !== 'sim');
+    $('int').disabled = !d.intOn;
+    $('intOut').textContent = d.intOn ? d.int + '/10' : 'não informada';
+    const bad = d.idade !== '' && (isNaN(+d.idade) || +d.idade < 0 || +d.idade > 120);
+    $('idadeErr').hidden = !bad; $('idade').setAttribute('aria-invalid', bad);
+
+    built = build(d);
+    const map = { qd: built.qd, hpma: built.hpma, hpp: built.hpp, meds: built.meds, alerg: built.alerg, exp: built.exp };
+    for (const k in map) {
+      const el = $(k);
+      if (last[k] !== map[k]) {
+        el.innerHTML = toHtml(map[k]);
+        const blk = el.closest('.block');
+        if (flash && last[k] !== undefined && blk) { blk.classList.add('flash'); requestAnimationFrame(() => requestAnimationFrame(() => blk.classList.remove('flash'))); }
+        last[k] = map[k];
+      }
+    }
+    $('todoList').innerHTML = built.todo.map(t => '<li>' + esc(t) + '</li>').join('');
+    $('tabPend').textContent = built.todo.length;
+  }
+
+  function asText() {
+    const b = built;
+    return [
+      'QD: ' + plain(b.qd), '', 'HPMA: ' + plain(b.hpma), '',
+      'Antecedentes: ' + plain(b.hpp), 'Medicações em uso: ' + plain(b.meds), 'Alergias: ' + plain(b.alerg),
+      'Expectativa do paciente: ' + plain(b.exp), '', 'A confirmar: ' + b.todo.join('; ') + '.',
+      'Sinais vitais e exame físico: não avaliados na ficha pré-consulta.'
+    ].join('\n');
+  }
+
+  // ---------- Etapas ----------
+  let step = 0;
+  function go(n) {
+    step = Math.max(0, Math.min(2, n));
+    document.querySelectorAll('fieldset[data-step]').forEach(f => f.hidden = +f.dataset.step !== step);
+    document.querySelectorAll('#steps button').forEach(b => {
+      const s = +b.dataset.step;
+      b.toggleAttribute('aria-current', s === step); if (s === step) b.setAttribute('aria-current', 'step');
+      b.classList.toggle('done', s < step);
+    });
+    $('stepLbl').textContent = 'Etapa ' + (step + 1) + ' de 3';
+    $('backBtn').disabled = step === 0;
+    $('nextBtn').textContent = step === 2 ? 'Ver folha →' : 'Continuar →';
+  }
+  $('steps').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(+b.dataset.step); });
+  $('backBtn').onclick = () => go(step - 1);
+  $('nextBtn').onclick = () => {
+    if (!$('idadeErr').hidden) { $('idade').focus(); return; }
+    if (step < 2) { go(step + 1); $('formPanel').scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+    else setView('rascunho', true);
+  };
+
+  function setView(v, scroll) {
+    $('grid').dataset.view = v;
+    $('tabRelato').setAttribute('aria-selected', v === 'relato');
+    $('tabRascunho').setAttribute('aria-selected', v === 'rascunho');
+    if (scroll) $('sheetPanel').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+  $('tabRelato').onclick = () => setView('relato');
+  $('tabRascunho').onclick = () => setView('rascunho');
+
+  $('f').addEventListener('input', () => render());
+  $('f').addEventListener('change', () => render());
+  $('hl').onchange = e => $('sheet').classList.toggle('show-pt', e.target.checked);
+
+  // ---------- Exemplo, limpar, desfazer ----------
+  const EX = { idade: '41', duracao: 'há 5 dias', queixa: 'Dor nas costas que está atrapalhando o trabalho.', local: 'região lombar',
+    carater: 'dor em peso', contexto: 'Depois de carregar caixas na mudança.', piora: 'Inclinar o corpo e ficar muito tempo em pé.',
+    alivia: 'Repousar e usar compressa morna.', associados: 'Sensação de rigidez ao levantar.', negados: 'Febre e ardor ao urinar.',
+    tentativas: 'Compressa morna, com melhora parcial. Não usei medicamento para a queixa.', hppTxt: 'Hipertensão arterial.',
+    medsTxt: 'Losartana 50 mg pela manhã.', alergTxt: '', prevTxt: '', expect: 'Entender a causa da dor e como retomar minhas atividades.',
+    sexo: 'm', inicio: 'gradual', evolucao: 'estavel', hpp: 'sim', meds: 'sim', alerg: 'ni', prev: 'ni', intOn: true, int: '6' };
+  function fill(d) {
+    TEXT_IDS.forEach(id => $(id).value = d[id] || '');
+    RADIOS.forEach(n => { const r = document.querySelector(`input[name="${n}"][value="${d[n] || 'ni'}"]`); if (r) r.checked = true; });
+    $('intOn').checked = !!d.intOn; $('int').value = d.int || '5';
+    render();
+  }
+  let undo = null;
+  function toast(msg) { $('toastMsg').textContent = msg; $('toast').hidden = false; }
+  $('exBtn').onclick = () => { undo = data(); fill(EX); toast('Exemplo fictício carregado.'); };
+  $('newBtn').onclick = () => { undo = data(); fill({}); go(0); toast('Ficha limpa.'); };
+  $('undoBtn').onclick = () => { if (undo) fill(undo); undo = null; $('toast').hidden = true; };
+
+  $('copyBtn').onclick = () => {
+    const txt = asText();
+    const ok = () => { $('copyMsg').textContent = 'Copiado. Cole no prontuário e revise antes de salvar.'; $('copyBox').hidden = true; };
+    const fail = () => { $('copyBox').hidden = false; $('copyTxt').value = txt; $('copyTxt').select(); $('copyMsg').textContent = 'Cópia automática indisponível aqui. O texto está selecionado abaixo.'; };
+    try { navigator.clipboard.writeText(txt).then(ok, fail); } catch (e) { fail(); }
+  };
+
+  fill(EX); last = {}; render(false); go(0);
+})();
+</script>
