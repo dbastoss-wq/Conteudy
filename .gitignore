@@ -1,0 +1,5 @@
+.env
+node_modules/
+config/agent.config.json
+config/knowledge-base.md
+tests/last-integration-run.json

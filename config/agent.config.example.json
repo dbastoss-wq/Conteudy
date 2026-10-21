@@ -1,0 +1,73 @@
+{
+  "company": {
+    "name": "[NOME DA EMPRESA]",
+    "description": "[DESCRIÇÃO DA ATIVIDADE E DOS SERVIÇOS]"
+  },
+  "agent": {
+    "name": "[NOME DO AGENTE]",
+    "email": "[EMAIL@DOMINIO.COM]",
+    "aliases": [],
+    "message_id_domain": "[DOMINIO.COM]"
+  },
+  "timezone": "America/Sao_Paulo",
+  "calendar": "[CALENDÁRIO CONECTADO AO CALENDLY, ex.: agenda@dominio.com]",
+  "meeting_types": [
+    {
+      "key": "reuniao_inicial",
+      "name": "[NOME DO TIPO DE REUNIÃO]",
+      "duration_min": 30,
+      "purpose": "[FINALIDADE]",
+      "scheduling_url": "https://calendly.com/[USUARIO]/[EVENTO]",
+      "event_type_uri": "https://api.calendly.com/event_types/[UUID]"
+    }
+  ],
+  "escalation": {
+    "contact_email": "[CONTATO RESPONSÁVEL POR EXCEÇÕES]",
+    "contact_name": "[NOME DO RESPONSÁVEL]"
+  },
+  "alert_email": "[E-MAIL QUE RECEBE ALERTAS DE FALHA]",
+  "internal_addresses": [],
+  "internal_domains": [],
+  "ignore_sender_domains": ["calendly.com"],
+  "allowed_url_prefixes": ["https://calendly.com/"],
+  "signature": "[NOME DO AGENTE]\nAtendimento [NOME DA EMPRESA]",
+  "escalation_ack": "Recebemos sua mensagem e ela foi encaminhada para a nossa equipe, que vai responder por aqui.",
+  "send_escalation_ack": true,
+  "skip_promotions": true,
+  "gmail": {
+    "query": "in:inbox -from:me -label:agente-processado newer_than:7d",
+    "max_per_run": 20,
+    "labels": {
+      "processado": "agente-processado",
+      "escalado": "agente-escalado",
+      "ignorado": "agente-ignorado",
+      "erro": "agente-erro"
+    }
+  },
+  "limits": {
+    "max_attempts": 3,
+    "lock_minutes": 15,
+    "min_confidence": 0.6,
+    "max_reply_chars": 2500,
+    "max_auto_replies_per_thread_24h": 4,
+    "max_auto_replies_per_sender_24h": 8
+  },
+  "ai": {
+    "model": "claude-opus-5-5",
+    "effort": "medium",
+    "max_tokens": 4000,
+    "fallbacks": true
+  },
+  "calendly": {
+    "user_uri": "https://api.calendly.com/users/[UUID]",
+    "organization_uri": "https://api.calendly.com/organizations/[UUID]",
+    "webhooks_enabled": true,
+    "reconcile_days_back": 2,
+    "reconcile_days_ahead": 60
+  },
+  "api": {
+    "gmail_base": "https://gmail.googleapis.com",
+    "calendly_base": "https://api.calendly.com",
+    "anthropic_base": "https://api.anthropic.com"
+  }
+}

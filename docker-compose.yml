@@ -1,0 +1,54 @@
+# Implantação de produção: n8n + PostgreSQL (dados do agente no schema "agente"; dados internos do n8n no schema "public").
+# Requer um domínio com HTTPS na frente (proxy reverso: Caddy, Traefik, Nginx ou Cloudflare Tunnel) para o webhook do Calendly.
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agente
+      POSTGRES_USER: agente
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina no .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agente -d agente"]
+      interval: 10s
+      retries: 10
+
+  n8n:
+    image: n8nio/n8n:2.44.5
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_DATABASE: agente
+      DB_POSTGRESDB_USER: agente
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?defina no .env}
+      N8N_HOST: ${N8N_HOST:?ex.: n8n.dominio.com.br}
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://${N8N_HOST}/
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      TZ: America/Sao_Paulo
+      # Os nós Code usam $env (chave do webhook) e o módulo crypto (HMAC e UUID).
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      CALENDLY_WEBHOOK_SIGNING_KEY: ${CALENDLY_WEBHOOK_SIGNING_KEY:?gere com: openssl rand -hex 32}
+      CALENDLY_WEBHOOK_TOLERANCE_SECONDS: "180"
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: "720"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+    volumes:
+      - n8ndata:/home/node/.n8n
+      - ./:/agente:ro
+    working_dir: /agente
+
+volumes:
+  pgdata:
+  n8ndata:

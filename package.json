@@ -1,0 +1,13 @@
+{
+  "name": "agente-atendimento-email",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Agente de atendimento por e-mail com Gmail, Calendly, Claude API e n8n",
+  "scripts": {
+    "build": "node scripts/build-workflows.js",
+    "test": "node --test tests/unit.test.js",
+    "test:integration": "node tests/integration.js",
+    "seed": "node scripts/seed-settings.js config/agent.config.json config/knowledge-base.md"
+  },
+  "engines": { "node": ">=18" }
+}

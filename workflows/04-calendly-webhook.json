@@ -1,0 +1,591 @@
+{
+  "id": "AgCalendlyHook01",
+  "name": "Agente | Calendly webhook",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "0814d231-f20a-96dc-1022-6946a5b307f2",
+      "name": "Webhook Calendly",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        140
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "calendly",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "webhookId": "6f1d3a52-0c2e-4f7e-9a51-7c3b2a1d9e0f"
+    },
+    {
+      "id": "35865583-dc06-36e5-9b91-80c698e12bf9",
+      "name": "Validar assinatura",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        280
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const calendly = (() => { const module = { exports: {} }; // Webhooks e recursos da Calendly API v2.\nconst crypto = require('crypto');\n\nconst CALENDLY_API = 'https://api.calendly.com';\n\n// Header \"Calendly-Webhook-Signature: t=<unix>,v1=<hex>\"; assinatura = HMAC-SHA256(key, `${t}.${rawBody}`).\nfunction verifySignature(header, rawBody, signingKey, toleranceSec = 180, nowSec = Math.floor(Date.now() / 1000)) {\n  if (!signingKey) return { valid: false, reason: 'chave_nao_configurada' };\n  if (!header) return { valid: false, reason: 'sem_assinatura' };\n  const parts = Object.fromEntries(String(header).split(',').map(p => p.trim().split('=')).filter(p => p.length === 2));\n  const t = Number(parts.t);\n  if (!t || !parts.v1) return { valid: false, reason: 'assinatura_malformada' };\n  if (Math.abs(nowSec - t) > toleranceSec) return { valid: false, reason: 'assinatura_expirada' };\n  const expected = crypto.createHmac('sha256', signingKey).update(`${t}.${rawBody}`).digest('hex');\n  const a = Buffer.from(expected, 'hex');\n  const b = Buffer.from(String(parts.v1), 'hex');\n  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return { valid: false, reason: 'assinatura_invalida' };\n  return { valid: true, reason: null };\n}\n\nfunction sign(rawBody, signingKey, t = Math.floor(Date.now() / 1000)) {\n  return `t=${t},v1=${crypto.createHmac('sha256', signingKey).update(`${t}.${rawBody}`).digest('hex')}`;\n}\n\n// Chave de idempotência do evento: o mesmo invitee pode gerar created e canceled, por isso inclui o tipo.\nfunction dedupeKey(body) {\n  const p = body.payload || {};\n  return `calendly:${body.event}:${p.uri || ''}:${body.created_at || ''}`;\n}\n\nfunction apiUrl(uri, base) {\n  if (!uri) return null;\n  return base && base !== CALENDLY_API ? String(uri).replace(CALENDLY_API, base) : String(uri);\n}\n\nfunction uuidFromUri(uri) {\n  return String(uri || '').split('/').pop();\n}\n\n// Recursos vindos da API (fonte da verdade) -> registro de agendamento.\nfunction bookingFromApi(event, invitee, source) {\n  let status = 'ativo';\n  if (invitee.status === 'canceled' || event.status === 'canceled') status = invitee.rescheduled ? 'reagendado' : 'cancelado';\n  const cal = event.calendar_event || {};\n  const tracking = invitee.tracking || {};\n  return {\n    calendly_event_uri: event.uri,\n    calendly_invitee_uri: invitee.uri,\n    event_type_uri: event.event_type || null,\n    event_name: event.name || null,\n    contact_email: String(invitee.email || '').toLowerCase(),\n    contact_name: invitee.name || null,\n    start_time: event.start_time,\n    end_time: event.end_time,\n    timezone: invitee.timezone || null,\n    status,\n    cancel_url: invitee.cancel_url || null,\n    reschedule_url: invitee.reschedule_url || null,\n    old_invitee_uri: invitee.old_invitee || null,\n    new_invitee_uri: invitee.new_invitee || null,\n    google_event_id: cal.kind === 'google' ? cal.external_id || null : null,\n    calendar_kind: cal.kind || null,\n    location: event.location || null,\n    canceled_reason: (invitee.cancellation && invitee.cancellation.reason) || null,\n    utm_content: tracking.utm_content || null,\n    source,\n    updated_at_remote: invitee.updated_at || event.updated_at || null,\n  };\n}\n\nmodule.exports = { verifySignature, sign, dedupeKey, apiUrl, uuidFromUri, bookingFromApi, CALENDLY_API };\n\n return module.exports; })();\nconst item = $input.first();\nlet raw = '';\nif (item.binary && item.binary.data) raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8');\nelse raw = JSON.stringify(item.json.body);\nconst headers = item.json.headers || {};\nconst v = calendly.verifySignature(headers['calendly-webhook-signature'], raw, $env.CALENDLY_WEBHOOK_SIGNING_KEY,\n  Number($env.CALENDLY_WEBHOOK_TOLERANCE_SECONDS || 180));\nlet body = null;\ntry { body = JSON.parse(raw); } catch (e) { return [{ json: { valid: false, reason: 'json_invalido' } }]; }\nreturn [{ json: { valid: v.valid, reason: v.reason, body, event: { dedupe_key: calendly.dedupeKey(body), source: 'calendly', event: body.event, payload: body } } }];"
+      }
+    },
+    {
+      "id": "7384d4ab-7e19-a40f-63b8-00233d6f815d",
+      "name": "Assinatura válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "57d9291d-03a7-436e-a94f-20f35a724cee",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a434bf86-a8fa-6a54-70f7-84f0618f6fbb",
+      "name": "Responder 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, reason: $json.reason }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    },
+    {
+      "id": "89545cc4-f6a5-276a-eb06-5f5edc32c92b",
+      "name": "Registrar evento",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1100,
+        140
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.register_webhook_event($1::jsonb) AS r",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.event)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "f8c3a9f3-fe51-dcfd-3536-74c1c4056d4c",
+      "name": "Responder 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        280
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, duplicate: !$json.r.is_new }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "40edcaa3-6a63-9fc2-22fe-da1ba9f3eaf0",
+      "name": "Processar evento?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cded2293-4f34-4a92-84e5-e0171795aa6b",
+              "leftValue": "={{ $('Registrar evento').first().json.r.process && ['invitee.created','invitee.canceled'].includes($('Validar assinatura').first().json.body.event) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "72ee5073-cd76-6982-8401-0c3831d37295",
+      "name": "Configuração",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.settings_get() AS r",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "cfb26ddd-3725-b748-1937-1b2a1af1c4fa",
+      "name": "Buscar convidado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        140
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Validar assinatura').first().json.body.payload.uri.replace('https://api.calendly.com', $json.r.api.calendly_base) }}",
+        "authentication": "genericCredentialType",
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "agCalendlyPat001",
+          "name": "Agente Calendly PAT"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "3fa48aaa-a44a-a6fc-7dd2-712110c29045",
+      "name": "Buscar evento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        280
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ ($('Validar assinatura').first().json.body.payload.event || $('Validar assinatura').first().json.body.payload.scheduled_event.uri).replace('https://api.calendly.com', $('Configuração').first().json.r.api.calendly_base) }}",
+        "authentication": "genericCredentialType",
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "agCalendlyPat001",
+          "name": "Agente Calendly PAT"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "15a010e9-71e2-137b-611c-097e5f7a72e0",
+      "name": "Montar agendamento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const calendly = (() => { const module = { exports: {} }; // Webhooks e recursos da Calendly API v2.\nconst crypto = require('crypto');\n\nconst CALENDLY_API = 'https://api.calendly.com';\n\n// Header \"Calendly-Webhook-Signature: t=<unix>,v1=<hex>\"; assinatura = HMAC-SHA256(key, `${t}.${rawBody}`).\nfunction verifySignature(header, rawBody, signingKey, toleranceSec = 180, nowSec = Math.floor(Date.now() / 1000)) {\n  if (!signingKey) return { valid: false, reason: 'chave_nao_configurada' };\n  if (!header) return { valid: false, reason: 'sem_assinatura' };\n  const parts = Object.fromEntries(String(header).split(',').map(p => p.trim().split('=')).filter(p => p.length === 2));\n  const t = Number(parts.t);\n  if (!t || !parts.v1) return { valid: false, reason: 'assinatura_malformada' };\n  if (Math.abs(nowSec - t) > toleranceSec) return { valid: false, reason: 'assinatura_expirada' };\n  const expected = crypto.createHmac('sha256', signingKey).update(`${t}.${rawBody}`).digest('hex');\n  const a = Buffer.from(expected, 'hex');\n  const b = Buffer.from(String(parts.v1), 'hex');\n  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return { valid: false, reason: 'assinatura_invalida' };\n  return { valid: true, reason: null };\n}\n\nfunction sign(rawBody, signingKey, t = Math.floor(Date.now() / 1000)) {\n  return `t=${t},v1=${crypto.createHmac('sha256', signingKey).update(`${t}.${rawBody}`).digest('hex')}`;\n}\n\n// Chave de idempotência do evento: o mesmo invitee pode gerar created e canceled, por isso inclui o tipo.\nfunction dedupeKey(body) {\n  const p = body.payload || {};\n  return `calendly:${body.event}:${p.uri || ''}:${body.created_at || ''}`;\n}\n\nfunction apiUrl(uri, base) {\n  if (!uri) return null;\n  return base && base !== CALENDLY_API ? String(uri).replace(CALENDLY_API, base) : String(uri);\n}\n\nfunction uuidFromUri(uri) {\n  return String(uri || '').split('/').pop();\n}\n\n// Recursos vindos da API (fonte da verdade) -> registro de agendamento.\nfunction bookingFromApi(event, invitee, source) {\n  let status = 'ativo';\n  if (invitee.status === 'canceled' || event.status === 'canceled') status = invitee.rescheduled ? 'reagendado' : 'cancelado';\n  const cal = event.calendar_event || {};\n  const tracking = invitee.tracking || {};\n  return {\n    calendly_event_uri: event.uri,\n    calendly_invitee_uri: invitee.uri,\n    event_type_uri: event.event_type || null,\n    event_name: event.name || null,\n    contact_email: String(invitee.email || '').toLowerCase(),\n    contact_name: invitee.name || null,\n    start_time: event.start_time,\n    end_time: event.end_time,\n    timezone: invitee.timezone || null,\n    status,\n    cancel_url: invitee.cancel_url || null,\n    reschedule_url: invitee.reschedule_url || null,\n    old_invitee_uri: invitee.old_invitee || null,\n    new_invitee_uri: invitee.new_invitee || null,\n    google_event_id: cal.kind === 'google' ? cal.external_id || null : null,\n    calendar_kind: cal.kind || null,\n    location: event.location || null,\n    canceled_reason: (invitee.cancellation && invitee.cancellation.reason) || null,\n    utm_content: tracking.utm_content || null,\n    source,\n    updated_at_remote: invitee.updated_at || event.updated_at || null,\n  };\n}\n\nmodule.exports = { verifySignature, sign, dedupeKey, apiUrl, uuidFromUri, bookingFromApi, CALENDLY_API };\n\n return module.exports; })();\n\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst ev = httpResult($input.first().json);\nconst inv = httpResult($('Buscar convidado').first().json);\nconst reg = $('Registrar evento').first().json.r;\nif (!inv.ok || !ev.ok) return [{ json: { ok: false, finish: { webhook_event_id: reg.webhook_event_id, status: 'falhou',\n  error: 'verificacao_calendly: convidado=' + inv.status + ' evento=' + ev.status } } }];\nconst b = calendly.bookingFromApi(ev.body.resource, inv.body.resource, 'webhook');\nb.workflow = 'calendly_webhook'; b.execution_id = $execution.id;\nreturn [{ json: { ok: true, booking: b } }];"
+      }
+    },
+    {
+      "id": "c19a8733-095e-3fe1-ffcf-2565cd963b4b",
+      "name": "Verificado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0608c7a9-80f6-4e43-ac1c-3efceceb7bb5",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "0a5921bf-56ac-b666-0ff3-46623e92d910",
+      "name": "Gravar agendamento",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2860,
+        140
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.upsert_booking($1::jsonb) AS r",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.booking)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "aecec59e-f47a-a7f1-6467-59f8682903f8",
+      "name": "Concluir evento",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3080,
+        280
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.finish_webhook_event($1::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify({ webhook_event_id: $('Registrar evento').first().json.r.webhook_event_id, status: 'processado' })] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "80a3f716-a685-724e-d204-c0721afd9a33",
+      "name": "Evento com falha",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3300,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.finish_webhook_event($1::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.finish)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "1db82d1a-0f53-7013-29a3-d01e01699376",
+      "name": "Evento ignorado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3520,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.finish_webhook_event($1::jsonb) WHERE ($1::jsonb->>'process')::boolean",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify({ webhook_event_id: $('Registrar evento').first().json.r.webhook_event_id, status: 'processado', error: 'evento_nao_tratado', process: $('Registrar evento').first().json.r.process })] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Webhook Calendly": {
+      "main": [
+        [
+          {
+            "node": "Validar assinatura",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar assinatura": {
+      "main": [
+        [
+          {
+            "node": "Assinatura válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assinatura válida?": {
+      "main": [
+        [
+          {
+            "node": "Registrar evento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar evento": {
+      "main": [
+        [
+          {
+            "node": "Responder 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder 200": {
+      "main": [
+        [
+          {
+            "node": "Processar evento?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar evento?": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Evento ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuração": {
+      "main": [
+        [
+          {
+            "node": "Buscar convidado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar convidado": {
+      "main": [
+        [
+          {
+            "node": "Buscar evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar evento": {
+      "main": [
+        [
+          {
+            "node": "Montar agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar agendamento": {
+      "main": [
+        [
+          {
+            "node": "Verificado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificado?": {
+      "main": [
+        [
+          {
+            "node": "Gravar agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Evento com falha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gravar agendamento": {
+      "main": [
+        [
+          {
+            "node": "Concluir evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "AgAlertas0000001"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

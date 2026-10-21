@@ -1,0 +1,453 @@
+{
+  "id": "AgReconciliar001",
+  "name": "Agente | Reconciliação",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "5dc0fa43-f025-6b4a-58a5-6cea6b4f6def",
+      "name": "A cada 30 minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        140
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7cb680ba-80d0-067d-46ec-52b63ee84da0",
+      "name": "Executar agora",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        440,
+        280
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "4b928a1d-f55b-f411-82b9-bf4cbbb19b93",
+      "name": "Configuração",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        660,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.settings_get() AS r",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "976e9da5-5541-cfb4-ec26-79e57ac38d76",
+      "name": "Liberar travas antigas",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.reset_stale($1::jsonb) AS r",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify({ max_attempts: ($json.r.limits || {}).max_attempts || 3, lock_minutes: ($json.r.limits || {}).lock_minutes || 15 })] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "8855c872-74f4-07b6-784a-a5d6dd89c20a",
+      "name": "Janela",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const s = $('Configuração').first().json.r;\nconst c = s.calendly || {};\nif (!c.user_uri) throw new Error('calendly.user_uri ausente: rode o workflow de configuração inicial.');\nconst now = Date.now();\nreturn [{ json: { min: new Date(now - (c.reconcile_days_back || 2) * 864e5).toISOString(), max: new Date(now + (c.reconcile_days_ahead || 60) * 864e5).toISOString(), user: c.user_uri } }];"
+      }
+    },
+    {
+      "id": "5233b31a-1aac-7aee-3048-bcdb53e86c5a",
+      "name": "Listar eventos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        280
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configuração').first().json.r.api.calendly_base }}/scheduled_events",
+        "authentication": "genericCredentialType",
+        "sendQuery": true,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "paginationMode": "responseContainsNextURL",
+              "nextURL": "={{ $response.body.pagination.next_page }}",
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.pagination || !$response.body.pagination.next_page }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20
+            }
+          }
+        },
+        "genericAuthType": "httpHeaderAuth",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "user",
+              "value": "={{ $json.user }}"
+            },
+            {
+              "name": "min_start_time",
+              "value": "={{ $json.min }}"
+            },
+            {
+              "name": "max_start_time",
+              "value": "={{ $json.max }}"
+            },
+            {
+              "name": "count",
+              "value": "100"
+            },
+            {
+              "name": "sort",
+              "value": "start_time:asc"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "agCalendlyPat001",
+          "name": "Agente Calendly PAT"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "1fc1b366-cd94-b51f-defa-2b96297d6652",
+      "name": "Eventos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst out = [];\nfor (const it of $input.all()) {\n  const r = httpResult(it.json);\n  if (!r.ok) throw new Error('Calendly scheduled_events falhou: ' + r.status + ' ' + r.error);\n  for (const ev of r.body.collection || []) out.push({ json: { event: ev, invitees_url: ev.uri.replace('https://api.calendly.com', $('Configuração').first().json.r.api.calendly_base) + '/invitees' } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "b3741038-3515-7395-49c3-14a4068f96cf",
+      "name": "Listar convidados",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.invitees_url }}",
+        "authentication": "genericCredentialType",
+        "sendQuery": true,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "genericAuthType": "httpHeaderAuth",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "count",
+              "value": "100"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "agCalendlyPat001",
+          "name": "Agente Calendly PAT"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "49b0e9ac-b311-5db9-53a2-b3f0ed525003",
+      "name": "Montar agendamentos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const calendly = (() => { const module = { exports: {} }; // Webhooks e recursos da Calendly API v2.\nconst crypto = require('crypto');\n\nconst CALENDLY_API = 'https://api.calendly.com';\n\n// Header \"Calendly-Webhook-Signature: t=<unix>,v1=<hex>\"; assinatura = HMAC-SHA256(key, `${t}.${rawBody}`).\nfunction verifySignature(header, rawBody, signingKey, toleranceSec = 180, nowSec = Math.floor(Date.now() / 1000)) {\n  if (!signingKey) return { valid: false, reason: 'chave_nao_configurada' };\n  if (!header) return { valid: false, reason: 'sem_assinatura' };\n  const parts = Object.fromEntries(String(header).split(',').map(p => p.trim().split('=')).filter(p => p.length === 2));\n  const t = Number(parts.t);\n  if (!t || !parts.v1) return { valid: false, reason: 'assinatura_malformada' };\n  if (Math.abs(nowSec - t) > toleranceSec) return { valid: false, reason: 'assinatura_expirada' };\n  const expected = crypto.createHmac('sha256', signingKey).update(`${t}.${rawBody}`).digest('hex');\n  const a = Buffer.from(expected, 'hex');\n  const b = Buffer.from(String(parts.v1), 'hex');\n  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return { valid: false, reason: 'assinatura_invalida' };\n  return { valid: true, reason: null };\n}\n\nfunction sign(rawBody, signingKey, t = Math.floor(Date.now() / 1000)) {\n  return `t=${t},v1=${crypto.createHmac('sha256', signingKey).update(`${t}.${rawBody}`).digest('hex')}`;\n}\n\n// Chave de idempotência do evento: o mesmo invitee pode gerar created e canceled, por isso inclui o tipo.\nfunction dedupeKey(body) {\n  const p = body.payload || {};\n  return `calendly:${body.event}:${p.uri || ''}:${body.created_at || ''}`;\n}\n\nfunction apiUrl(uri, base) {\n  if (!uri) return null;\n  return base && base !== CALENDLY_API ? String(uri).replace(CALENDLY_API, base) : String(uri);\n}\n\nfunction uuidFromUri(uri) {\n  return String(uri || '').split('/').pop();\n}\n\n// Recursos vindos da API (fonte da verdade) -> registro de agendamento.\nfunction bookingFromApi(event, invitee, source) {\n  let status = 'ativo';\n  if (invitee.status === 'canceled' || event.status === 'canceled') status = invitee.rescheduled ? 'reagendado' : 'cancelado';\n  const cal = event.calendar_event || {};\n  const tracking = invitee.tracking || {};\n  return {\n    calendly_event_uri: event.uri,\n    calendly_invitee_uri: invitee.uri,\n    event_type_uri: event.event_type || null,\n    event_name: event.name || null,\n    contact_email: String(invitee.email || '').toLowerCase(),\n    contact_name: invitee.name || null,\n    start_time: event.start_time,\n    end_time: event.end_time,\n    timezone: invitee.timezone || null,\n    status,\n    cancel_url: invitee.cancel_url || null,\n    reschedule_url: invitee.reschedule_url || null,\n    old_invitee_uri: invitee.old_invitee || null,\n    new_invitee_uri: invitee.new_invitee || null,\n    google_event_id: cal.kind === 'google' ? cal.external_id || null : null,\n    calendar_kind: cal.kind || null,\n    location: event.location || null,\n    canceled_reason: (invitee.cancellation && invitee.cancellation.reason) || null,\n    utm_content: tracking.utm_content || null,\n    source,\n    updated_at_remote: invitee.updated_at || event.updated_at || null,\n  };\n}\n\nmodule.exports = { verifySignature, sign, dedupeKey, apiUrl, uuidFromUri, bookingFromApi, CALENDLY_API };\n\n return module.exports; })();\n\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst events = Object.fromEntries($('Eventos').all().map(i => [i.json.event.uri, i.json.event]));\nconst out = [];\nfor (const it of $input.all()) {\n  const r = httpResult(it.json);\n  if (!r.ok) throw new Error('Calendly invitees falhou: ' + r.status + ' ' + r.error);\n  for (const inv of r.body.collection || []) {\n    const ev = events[inv.event];\n    if (!ev) continue;\n    const b = calendly.bookingFromApi(ev, inv, 'reconciliacao');\n    b.workflow = 'reconciliacao'; b.execution_id = $execution.id;\n    out.push({ json: { booking: b } });\n  }\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "2961a4e9-cefd-d3e0-0940-89660b833d6c",
+      "name": "Gravar agendamentos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2200,
+        280
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.upsert_booking($1::jsonb) AS r",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.booking)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "e35ab590-d529-30e3-64d9-cbe7b94f794b",
+      "name": "Resumo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const changes = {};\nfor (const it of $input.all()) changes[it.json.r.change] = (changes[it.json.r.change] || 0) + 1;\nreturn [{ json: { log: { workflow: 'reconciliacao', execution_id: $execution.id, action: 'reconciliar_calendly', status: 'ok',\n  detail: { total: $input.all().length, changes, stale: $('Liberar travas antigas').first().json.r } } } }];"
+      }
+    },
+    {
+      "id": "5de0257d-8f02-cc74-6530-1f42fd703d1b",
+      "name": "Registrar reconciliação",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.log($1::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.log)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "A cada 30 minutos": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executar agora": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuração": {
+      "main": [
+        [
+          {
+            "node": "Liberar travas antigas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Liberar travas antigas": {
+      "main": [
+        [
+          {
+            "node": "Janela",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Janela": {
+      "main": [
+        [
+          {
+            "node": "Listar eventos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar eventos": {
+      "main": [
+        [
+          {
+            "node": "Eventos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Eventos": {
+      "main": [
+        [
+          {
+            "node": "Listar convidados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar convidados": {
+      "main": [
+        [
+          {
+            "node": "Montar agendamentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar agendamentos": {
+      "main": [
+        [
+          {
+            "node": "Gravar agendamentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gravar agendamentos": {
+      "main": [
+        [
+          {
+            "node": "Resumo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo": {
+      "main": [
+        [
+          {
+            "node": "Registrar reconciliação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "AgAlertas0000001"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

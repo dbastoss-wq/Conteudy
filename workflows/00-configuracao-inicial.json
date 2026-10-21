@@ -1,0 +1,639 @@
+{
+  "id": "AgConfigInicial1",
+  "name": "Agente | Configuração inicial",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "f0705146-adfa-d1d0-93d0-f6d3edb6c9ac",
+      "name": "Executar configuração",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        220,
+        140
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dde3c5d4-5f8a-f69c-f583-90ea9ed687d7",
+      "name": "Configuração",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        440,
+        280
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.settings_get() AS r",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "d724d705-1018-fe0a-6ada-2c4d4ca9b7a3",
+      "name": "Rótulos desejados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const l = $input.first().json.r.gmail.labels; return Object.values(l).map(name => ({ json: { name } }));"
+      }
+    },
+    {
+      "id": "a3ac7bbf-1fca-2b31-a831-3880fb4fd885",
+      "name": "Criar rótulo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.r.api.gmail_base }}/gmail/v1/users/me/labels",
+        "authentication": "predefinedCredentialType",
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "nodeCredentialType": "gmailOAuth2",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $json.name, labelListVisibility: 'labelShow', messageListVisibility: 'show' }) }}"
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "agGmailOAuth0001",
+          "name": "Agente Gmail OAuth2"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false
+    },
+    {
+      "id": "733dd1ca-fc30-f026-7dcc-8c760742ddc0",
+      "name": "Um item",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{ json: { created: $input.all().map(i => i.json.statusCode) } }];"
+      }
+    },
+    {
+      "id": "9410d31e-c919-f0ae-992b-05d6a37b7ce4",
+      "name": "Listar rótulos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        280
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configuração').first().json.r.api.gmail_base }}/gmail/v1/users/me/labels",
+        "authentication": "predefinedCredentialType",
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "nodeCredentialType": "gmailOAuth2"
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "agGmailOAuth0001",
+          "name": "Agente Gmail OAuth2"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "024c7f05-132a-7992-cf91-1acc7beba4e6",
+      "name": "Mapear rótulos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst r = httpResult($input.first().json);\nif (!r.ok) throw new Error('Gmail labels.list falhou: ' + r.error);\nconst want = $('Configuração').first().json.r.gmail.labels;\nconst byName = Object.fromEntries((r.body.labels || []).map(l => [l.name, l.id]));\nconst ids = {};\nfor (const [k, name] of Object.entries(want)) { if (!byName[name]) throw new Error('Rótulo não encontrado: ' + name); ids[k] = byName[name]; }\nreturn [{ json: { ids } }];"
+      }
+    },
+    {
+      "id": "6b1efecd-8da7-f4f3-b448-a437be05f172",
+      "name": "Salvar rótulos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.settings_set('gmail_label_ids', $1::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.ids)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "b85513cf-cba7-8023-82a4-d6b3f721c454",
+      "name": "Calendly usuário",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        140
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configuração').first().json.r.api.calendly_base }}/users/me",
+        "authentication": "genericCredentialType",
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "agCalendlyPat001",
+          "name": "Agente Calendly PAT"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "73d7bd70-d3ac-6804-c400-e4527c832037",
+      "name": "Dados Calendly",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        280
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst r = httpResult($input.first().json);\nif (!r.ok) throw new Error('Calendly /users/me falhou: ' + r.status + ' ' + r.error);\nconst u = r.body.resource;\nconst c = Object.assign({}, $('Configuração').first().json.r.calendly, { user_uri: u.uri, organization_uri: u.current_organization,\n  scheduling_url: u.scheduling_url, timezone: u.timezone, user_name: u.name });\nreturn [{ json: { calendly: c } }];"
+      }
+    },
+    {
+      "id": "f91d35fb-1ed5-ff3e-2880-f99f7bea85b4",
+      "name": "Salvar Calendly",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2420,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.settings_set('calendly', $1::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.calendly)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "25d274e8-c96e-7cad-0384-3cd789ecabf5",
+      "name": "Tipos de evento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configuração').first().json.r.api.calendly_base }}/event_types",
+        "authentication": "genericCredentialType",
+        "sendQuery": true,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "genericAuthType": "httpHeaderAuth",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "user",
+              "value": "={{ $('Dados Calendly').first().json.calendly.user_uri }}"
+            },
+            {
+              "name": "active",
+              "value": "true"
+            },
+            {
+              "name": "count",
+              "value": "100"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "agCalendlyPat001",
+          "name": "Agente Calendly PAT"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "df1ca79e-3d52-7432-f162-d0199006e067",
+      "name": "Resumo tipos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst r = httpResult($input.first().json);\nconst types = r.ok ? (r.body.collection || []).map(t => ({ name: t.name, duration_min: t.duration, scheduling_url: t.scheduling_url, event_type_uri: t.uri, active: t.active })) : [];\nreturn [{ json: { types } }];"
+      }
+    },
+    {
+      "id": "239d2820-9443-12dd-0052-a64617373f33",
+      "name": "Salvar tipos encontrados",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3080,
+        280
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.settings_set('calendly_event_types_discovered', $1::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.types)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "ee0b16c5-70fb-32b6-03ab-c9fb866a74e3",
+      "name": "Webhooks habilitados?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3300,
+        420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "59168a4e-9617-4932-8c37-471bd34933f7",
+              "leftValue": "={{ $('Dados Calendly').first().json.calendly.webhooks_enabled && !!$('Dados Calendly').first().json.calendly.webhook_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3c856dd4-92b0-bd02-f0ad-6dbc6337c1d9",
+      "name": "Criar assinatura webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3520,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.r.api.calendly_base }}/webhook_subscriptions",
+        "authentication": "genericCredentialType",
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "genericAuthType": "httpHeaderAuth",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ url: $('Dados Calendly').first().json.calendly.webhook_url, events: ['invitee.created', 'invitee.canceled'], organization: $('Dados Calendly').first().json.calendly.organization_uri, user: $('Dados Calendly').first().json.calendly.user_uri, scope: 'user', signing_key: $env.CALENDLY_WEBHOOK_SIGNING_KEY }) }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "agCalendlyPat001",
+          "name": "Agente Calendly PAT"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false
+    },
+    {
+      "id": "d8670216-b554-b30f-13a8-81231b2d45d7",
+      "name": "Resultado webhook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3740,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst r = httpResult($input.first().json);\n// 409 = assinatura já existe para esta URL (idempotente). 403 costuma indicar plano sem webhooks: use a reconciliação periódica.\nreturn [{ json: { status: r.status, ok: r.ok || r.status === 409, body: r.body } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Executar configuração": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuração": {
+      "main": [
+        [
+          {
+            "node": "Rótulos desejados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rótulos desejados": {
+      "main": [
+        [
+          {
+            "node": "Criar rótulo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar rótulo": {
+      "main": [
+        [
+          {
+            "node": "Um item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Um item": {
+      "main": [
+        [
+          {
+            "node": "Listar rótulos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar rótulos": {
+      "main": [
+        [
+          {
+            "node": "Mapear rótulos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapear rótulos": {
+      "main": [
+        [
+          {
+            "node": "Salvar rótulos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar rótulos": {
+      "main": [
+        [
+          {
+            "node": "Calendly usuário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendly usuário": {
+      "main": [
+        [
+          {
+            "node": "Dados Calendly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dados Calendly": {
+      "main": [
+        [
+          {
+            "node": "Salvar Calendly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Calendly": {
+      "main": [
+        [
+          {
+            "node": "Tipos de evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipos de evento": {
+      "main": [
+        [
+          {
+            "node": "Resumo tipos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo tipos": {
+      "main": [
+        [
+          {
+            "node": "Salvar tipos encontrados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar tipos encontrados": {
+      "main": [
+        [
+          {
+            "node": "Webhooks habilitados?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhooks habilitados?": {
+      "main": [
+        [
+          {
+            "node": "Criar assinatura webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar assinatura webhook": {
+      "main": [
+        [
+          {
+            "node": "Resultado webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "AgAlertas0000001"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

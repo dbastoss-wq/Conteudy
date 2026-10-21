@@ -1,0 +1,253 @@
+{
+  "id": "AgCaixaEntrada01",
+  "name": "Agente | Caixa de entrada (polling)",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "4ec5889a-cfa6-5fdb-6f55-a0aa97e7b683",
+      "name": "A cada 2 minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        140
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7cb680ba-80d0-067d-46ec-52b63ee84da0",
+      "name": "Executar agora",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        440,
+        280
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "4b928a1d-f55b-f411-82b9-bf4cbbb19b93",
+      "name": "Configuração",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        660,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.settings_get() AS r",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "1a99bfc7-4c98-879c-cf03-f1ee952d13b0",
+      "name": "Validar configuração",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const s = $input.first().json.r;\nconst missing = ['agent', 'company', 'escalation', 'gmail', 'api', 'meeting_types', 'knowledge_base', 'gmail_label_ids'].filter(k => !s[k]);\nif (missing.length) throw new Error('Configuração incompleta em agente.settings: ' + missing.join(', ') + '. Rode seed-settings e o workflow de configuração inicial.');\nif (s.paused === true) return [];\nreturn [{ json: { ok: true } }];"
+      }
+    },
+    {
+      "id": "e78055c2-7d5f-cf72-0673-339879119e91",
+      "name": "Listar mensagens",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        140
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configuração').first().json.r.api.gmail_base }}/gmail/v1/users/me/messages",
+        "authentication": "predefinedCredentialType",
+        "sendQuery": true,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "nodeCredentialType": "gmailOAuth2",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Configuração').first().json.r.gmail.query }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "={{ $('Configuração').first().json.r.gmail.max_per_run || 20 }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "agGmailOAuth0001",
+          "name": "Agente Gmail OAuth2"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "fda7cc6a-98df-5b16-1408-08c52e12aa22",
+      "name": "Separar mensagens",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        280
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst r = httpResult($input.first().json);\nif (!r.ok) throw new Error('Gmail messages.list falhou: ' + r.status + ' ' + r.error);\nconst s = $('Configuração').first().json.r;\n// A API devolve as mais recentes primeiro; processa na ordem de chegada.\nreturn (r.body.messages || []).reverse().map(m => ({ json: { gmail_message_id: m.id, settings: s } }));"
+      }
+    },
+    {
+      "id": "e4f36133-9b30-7098-c646-a9c594a2b22e",
+      "name": "Processar mensagem",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1540,
+        420
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "AgProcessarMsg01",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "A cada 2 minutos": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executar agora": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuração": {
+      "main": [
+        [
+          {
+            "node": "Validar configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar configuração": {
+      "main": [
+        [
+          {
+            "node": "Listar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Separar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Processar mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "AgAlertas0000001"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

@@ -1,0 +1,541 @@
+{
+  "id": "AgEnviarEmail001",
+  "name": "Agente | Enviar e-mail idempotente",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "2fed5f6b-bc10-0a70-7484-f9078a1bb6a8",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        140
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "ee41fd04-ec7e-7fed-7220-195db7850ed3",
+      "name": "Preparar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        280
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const email = (() => { const module = { exports: {} }; // Normalização de mensagens da Gmail API (format=full) e montagem de MIME para envio.\n// Sem dependências externas: o mesmo código roda nos testes (Node) e nos nós Code do n8n.\n\nfunction b64urlDecode(data) {\n  if (!data) return '';\n  return Buffer.from(String(data).replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');\n}\n\nfunction b64urlEncode(str) {\n  return Buffer.from(str, 'utf8').toString('base64').replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');\n}\n\nfunction headerMap(headers) {\n  const map = {};\n  for (const h of headers || []) {\n    const k = String(h.name || '').toLowerCase();\n    if (!k) continue;\n    map[k] = map[k] ? map[k] + ', ' + h.value : String(h.value || '');\n  }\n  return map;\n}\n\n// \"Fulano de Tal\" <fulano@x.com>, outro@y.com -> [{name, address}]\nfunction parseAddressList(value) {\n  if (!value) return [];\n  const out = [];\n  const re = /\\s*(?:\"?([^\"<,]*?)\"?\\s*<([^>]+)>|([^,\\s<>]+@[^,\\s<>]+))\\s*(?:,|$)/g;\n  let m;\n  while ((m = re.exec(value)) !== null) {\n    if (m[0] === '') { re.lastIndex++; continue; }\n    const address = (m[2] || m[3] || '').trim().toLowerCase();\n    if (address) out.push({ name: (m[1] || '').trim(), address });\n  }\n  return out;\n}\n\nfunction stripHtml(html) {\n  return String(html || '')\n    .replace(/<(script|style)[\\s\\S]*?<\\/\\1>/gi, '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/(p|div|li|tr|h\\d)>/gi, '\\n')\n    .replace(/<[^>]+>/g, '')\n    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\")\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nfunction collectParts(part, acc) {\n  if (!part) return acc;\n  const mime = String(part.mimeType || '').toLowerCase();\n  const isAttachment = part.filename && part.filename.length > 0;\n  if (!isAttachment && part.body && part.body.data) {\n    if (mime === 'text/plain') acc.text.push(b64urlDecode(part.body.data));\n    else if (mime === 'text/html') acc.html.push(b64urlDecode(part.body.data));\n  }\n  if (isAttachment) acc.attachments.push({ filename: part.filename, mimeType: mime, size: (part.body && part.body.size) || 0 });\n  for (const p of part.parts || []) collectParts(p, acc);\n  return acc;\n}\n\n// Remove o histórico citado (\"Em ... escreveu:\", linhas com \">\") para enviar só o texto novo à IA.\nfunction stripQuoted(text) {\n  const lines = String(text || '').split(/\\r?\\n/);\n  const out = [];\n  for (const line of lines) {\n    if (/^\\s*(Em .+escreveu:|On .+wrote:|-----\\s*Original Message|De:\\s.+|From:\\s.+)$/i.test(line) && out.length > 0) break;\n    if (/^\\s*>/.test(line)) continue;\n    out.push(line);\n  }\n  return out.join('\\n').trim();\n}\n\nfunction normalizeGmailMessage(msg) {\n  const payload = msg.payload || {};\n  const h = headerMap(payload.headers);\n  const parts = collectParts(payload, { text: [], html: [], attachments: [] });\n  const fullText = parts.text.length ? parts.text.join('\\n') : stripHtml(parts.html.join('\\n'));\n  const from = parseAddressList(h['from'])[0] || { name: '', address: '' };\n  return {\n    gmail_message_id: msg.id,\n    gmail_thread_id: msg.threadId,\n    label_ids: msg.labelIds || [],\n    internal_date: msg.internalDate ? new Date(Number(msg.internalDate)).toISOString() : null,\n    rfc822_message_id: (h['message-id'] || '').trim(),\n    in_reply_to: (h['in-reply-to'] || '').trim(),\n    references: (h['references'] || '').trim(),\n    subject: h['subject'] || '',\n    from_name: from.name,\n    from_email: from.address,\n    reply_to: (parseAddressList(h['reply-to'])[0] || {}).address || '',\n    to: parseAddressList(h['to']).map(a => a.address),\n    cc: parseAddressList(h['cc']).map(a => a.address),\n    headers: h,\n    content_type: (h['content-type'] || payload.mimeType || '').toLowerCase(),\n    body_text: fullText.slice(0, 20000),\n    body_new_text: stripQuoted(fullText).slice(0, 8000),\n    attachments: parts.attachments,\n    snippet: msg.snippet || '',\n  };\n}\n\nfunction encodeHeader(value) {\n  // RFC 2047 apenas quando necessário (acentos no assunto/nome).\n  return /^[\\x20-\\x7e]*$/.test(value) ? value : '=?UTF-8?B?' + Buffer.from(value, 'utf8').toString('base64') + '?=';\n}\n\nfunction formatAddress(name, address) {\n  return name ? `${encodeHeader(name.includes(',') ? `\"${name}\"` : name)} <${address}>` : address;\n}\n\nfunction replySubject(subject) {\n  const s = String(subject || '').trim();\n  return /^(re|res|resp):/i.test(s) ? s : `Re: ${s || '(sem assunto)'}`;\n}\n\nfunction newMessageId(domain, uuid) {\n  return `<agente.${uuid}@${domain}>`;\n}\n\n// Monta a mensagem RFC 5322 e devolve o campo `raw` (base64url) aceito por users.messages.send.\nfunction buildRawEmail(o) {\n  const lines = [];\n  lines.push(`From: ${formatAddress(o.fromName, o.fromEmail)}`);\n  lines.push(`To: ${(o.to || []).join(', ')}`);\n  if (o.cc && o.cc.length) lines.push(`Cc: ${o.cc.join(', ')}`);\n  if (o.replyTo) lines.push(`Reply-To: ${o.replyTo}`);\n  lines.push(`Subject: ${encodeHeader(o.subject || '')}`);\n  lines.push(`Message-ID: ${o.messageId}`);\n  lines.push(`Date: ${new Date(o.date || Date.now()).toUTCString().replace('GMT', '+0000')}`);\n  if (o.inReplyTo) lines.push(`In-Reply-To: ${o.inReplyTo}`);\n  if (o.references) lines.push(`References: ${o.references}`);\n  // RFC 3834: identifica a mensagem como automática; evita ciclos com outros robôs.\n  lines.push('Auto-Submitted: auto-replied');\n  lines.push(`X-Agente-Atendimento: ${o.agentTag || 'agente'}`);\n  lines.push('MIME-Version: 1.0');\n  lines.push('Content-Type: text/plain; charset=UTF-8');\n  lines.push('Content-Transfer-Encoding: base64');\n  lines.push('');\n  lines.push(Buffer.from(o.bodyText || '', 'utf8').toString('base64').replace(/(.{76})/g, '$1\\r\\n'));\n  return b64urlEncode(lines.join('\\r\\n'));\n}\n\nmodule.exports = {\n  b64urlDecode, b64urlEncode, headerMap, parseAddressList, stripHtml, stripQuoted,\n  normalizeGmailMessage, buildRawEmail, replySubject, newMessageId, encodeHeader,\n};\n\n return module.exports; })();\nconst i = $input.first().json;\nconst s = i.settings;\nconst rfc = email.newMessageId(s.agent.message_id_domain || s.agent.email.split('@')[1], require('crypto').randomUUID());\nreturn [{ json: { input: i, prepare: {\n  idempotency_key: i.idempotency_key, kind: i.kind, conversation_id: i.conversation_id || '', source_message_id: i.source_message_id || '',\n  to: i.to, subject: i.subject, body_text: i.body_text, rfc822_message_id: rfc, max_attempts: (s.limits || {}).max_attempts || 3 } } }];"
+      }
+    },
+    {
+      "id": "e84f38ed-664e-03be-e1cc-379d44ea0085",
+      "name": "Reservar envio",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        660,
+        420
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.prepare_outbound($1::jsonb) AS r",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.prepare)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "dedf91f9-a613-ad74-5435-0c8cc16822e5",
+      "name": "Montar mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const email = (() => { const module = { exports: {} }; // Normalização de mensagens da Gmail API (format=full) e montagem de MIME para envio.\n// Sem dependências externas: o mesmo código roda nos testes (Node) e nos nós Code do n8n.\n\nfunction b64urlDecode(data) {\n  if (!data) return '';\n  return Buffer.from(String(data).replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');\n}\n\nfunction b64urlEncode(str) {\n  return Buffer.from(str, 'utf8').toString('base64').replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');\n}\n\nfunction headerMap(headers) {\n  const map = {};\n  for (const h of headers || []) {\n    const k = String(h.name || '').toLowerCase();\n    if (!k) continue;\n    map[k] = map[k] ? map[k] + ', ' + h.value : String(h.value || '');\n  }\n  return map;\n}\n\n// \"Fulano de Tal\" <fulano@x.com>, outro@y.com -> [{name, address}]\nfunction parseAddressList(value) {\n  if (!value) return [];\n  const out = [];\n  const re = /\\s*(?:\"?([^\"<,]*?)\"?\\s*<([^>]+)>|([^,\\s<>]+@[^,\\s<>]+))\\s*(?:,|$)/g;\n  let m;\n  while ((m = re.exec(value)) !== null) {\n    if (m[0] === '') { re.lastIndex++; continue; }\n    const address = (m[2] || m[3] || '').trim().toLowerCase();\n    if (address) out.push({ name: (m[1] || '').trim(), address });\n  }\n  return out;\n}\n\nfunction stripHtml(html) {\n  return String(html || '')\n    .replace(/<(script|style)[\\s\\S]*?<\\/\\1>/gi, '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/(p|div|li|tr|h\\d)>/gi, '\\n')\n    .replace(/<[^>]+>/g, '')\n    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\")\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nfunction collectParts(part, acc) {\n  if (!part) return acc;\n  const mime = String(part.mimeType || '').toLowerCase();\n  const isAttachment = part.filename && part.filename.length > 0;\n  if (!isAttachment && part.body && part.body.data) {\n    if (mime === 'text/plain') acc.text.push(b64urlDecode(part.body.data));\n    else if (mime === 'text/html') acc.html.push(b64urlDecode(part.body.data));\n  }\n  if (isAttachment) acc.attachments.push({ filename: part.filename, mimeType: mime, size: (part.body && part.body.size) || 0 });\n  for (const p of part.parts || []) collectParts(p, acc);\n  return acc;\n}\n\n// Remove o histórico citado (\"Em ... escreveu:\", linhas com \">\") para enviar só o texto novo à IA.\nfunction stripQuoted(text) {\n  const lines = String(text || '').split(/\\r?\\n/);\n  const out = [];\n  for (const line of lines) {\n    if (/^\\s*(Em .+escreveu:|On .+wrote:|-----\\s*Original Message|De:\\s.+|From:\\s.+)$/i.test(line) && out.length > 0) break;\n    if (/^\\s*>/.test(line)) continue;\n    out.push(line);\n  }\n  return out.join('\\n').trim();\n}\n\nfunction normalizeGmailMessage(msg) {\n  const payload = msg.payload || {};\n  const h = headerMap(payload.headers);\n  const parts = collectParts(payload, { text: [], html: [], attachments: [] });\n  const fullText = parts.text.length ? parts.text.join('\\n') : stripHtml(parts.html.join('\\n'));\n  const from = parseAddressList(h['from'])[0] || { name: '', address: '' };\n  return {\n    gmail_message_id: msg.id,\n    gmail_thread_id: msg.threadId,\n    label_ids: msg.labelIds || [],\n    internal_date: msg.internalDate ? new Date(Number(msg.internalDate)).toISOString() : null,\n    rfc822_message_id: (h['message-id'] || '').trim(),\n    in_reply_to: (h['in-reply-to'] || '').trim(),\n    references: (h['references'] || '').trim(),\n    subject: h['subject'] || '',\n    from_name: from.name,\n    from_email: from.address,\n    reply_to: (parseAddressList(h['reply-to'])[0] || {}).address || '',\n    to: parseAddressList(h['to']).map(a => a.address),\n    cc: parseAddressList(h['cc']).map(a => a.address),\n    headers: h,\n    content_type: (h['content-type'] || payload.mimeType || '').toLowerCase(),\n    body_text: fullText.slice(0, 20000),\n    body_new_text: stripQuoted(fullText).slice(0, 8000),\n    attachments: parts.attachments,\n    snippet: msg.snippet || '',\n  };\n}\n\nfunction encodeHeader(value) {\n  // RFC 2047 apenas quando necessário (acentos no assunto/nome).\n  return /^[\\x20-\\x7e]*$/.test(value) ? value : '=?UTF-8?B?' + Buffer.from(value, 'utf8').toString('base64') + '?=';\n}\n\nfunction formatAddress(name, address) {\n  return name ? `${encodeHeader(name.includes(',') ? `\"${name}\"` : name)} <${address}>` : address;\n}\n\nfunction replySubject(subject) {\n  const s = String(subject || '').trim();\n  return /^(re|res|resp):/i.test(s) ? s : `Re: ${s || '(sem assunto)'}`;\n}\n\nfunction newMessageId(domain, uuid) {\n  return `<agente.${uuid}@${domain}>`;\n}\n\n// Monta a mensagem RFC 5322 e devolve o campo `raw` (base64url) aceito por users.messages.send.\nfunction buildRawEmail(o) {\n  const lines = [];\n  lines.push(`From: ${formatAddress(o.fromName, o.fromEmail)}`);\n  lines.push(`To: ${(o.to || []).join(', ')}`);\n  if (o.cc && o.cc.length) lines.push(`Cc: ${o.cc.join(', ')}`);\n  if (o.replyTo) lines.push(`Reply-To: ${o.replyTo}`);\n  lines.push(`Subject: ${encodeHeader(o.subject || '')}`);\n  lines.push(`Message-ID: ${o.messageId}`);\n  lines.push(`Date: ${new Date(o.date || Date.now()).toUTCString().replace('GMT', '+0000')}`);\n  if (o.inReplyTo) lines.push(`In-Reply-To: ${o.inReplyTo}`);\n  if (o.references) lines.push(`References: ${o.references}`);\n  // RFC 3834: identifica a mensagem como automática; evita ciclos com outros robôs.\n  lines.push('Auto-Submitted: auto-replied');\n  lines.push(`X-Agente-Atendimento: ${o.agentTag || 'agente'}`);\n  lines.push('MIME-Version: 1.0');\n  lines.push('Content-Type: text/plain; charset=UTF-8');\n  lines.push('Content-Transfer-Encoding: base64');\n  lines.push('');\n  lines.push(Buffer.from(o.bodyText || '', 'utf8').toString('base64').replace(/(.{76})/g, '$1\\r\\n'));\n  return b64urlEncode(lines.join('\\r\\n'));\n}\n\nmodule.exports = {\n  b64urlDecode, b64urlEncode, headerMap, parseAddressList, stripHtml, stripQuoted,\n  normalizeGmailMessage, buildRawEmail, replySubject, newMessageId, encodeHeader,\n};\n\n return module.exports; })();\nconst p = $('Preparar').first().json.input;\nconst r = $input.first().json.r;\nconst s = p.settings;\nif (!r.should_send) return [{ json: { send: false, needs_verification: false, outbound: r } }];\nconst raw = email.buildRawEmail({\n  fromName: s.agent.name, fromEmail: s.agent.email, to: r.to, cc: p.cc || [], replyTo: p.reply_to || '',\n  subject: r.subject, messageId: r.rfc822_message_id, inReplyTo: p.in_reply_to || '', references: p.references || '',\n  bodyText: r.body_text, agentTag: s.agent.name });\nconst body = { raw };\nif (p.thread_id) body.threadId = p.thread_id;\nreturn [{ json: { send: true, needs_verification: !!r.needs_verification, outbound: r, gmail_body: body,\n  verify_query: 'rfc822msgid:' + r.rfc822_message_id.replace(/[<>]/g, '') } }];"
+      }
+    },
+    {
+      "id": "064f54d5-488a-6365-dbf5-73bf7fd9aa06",
+      "name": "Configuração",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{ json: Object.assign({ r: $('Preparar').first().json.input.settings }, $input.first().json) }];"
+      }
+    },
+    {
+      "id": "de780a48-9485-6ad7-d24e-b20922f1514a",
+      "name": "Deve enviar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        280
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dbb35077-f3c1-4336-a30c-9affce56998a",
+              "leftValue": "={{ $json.send }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cf5d7e97-d454-a94e-19ed-58163dfd26c5",
+      "name": "Verificar antes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a2e9a3c8-2d6e-4993-be38-79a7052895fb",
+              "leftValue": "={{ $json.needs_verification }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "6cd594f4-bb5b-2925-7272-8b0a36b8d902",
+      "name": "Buscar enviado",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configuração').first().json.r.api.gmail_base }}/gmail/v1/users/me/messages",
+        "authentication": "predefinedCredentialType",
+        "sendQuery": true,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "nodeCredentialType": "gmailOAuth2",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Montar mensagem').first().json.verify_query }}"
+            },
+            {
+              "name": "includeSpamTrash",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "agGmailOAuth0001",
+          "name": "Agente Gmail OAuth2"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "e166d338-0318-c401-df1b-3a805791015c",
+      "name": "Avaliar verificação",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst m = $('Montar mensagem').first().json;\nconst r = httpResult($input.first().json);\nif (!r.ok) throw new Error('Falha ao verificar envio anterior: ' + r.error);\nconst found = (r.body.messages || [])[0];\nreturn [{ json: { already_sent: !!found, record: found ? { outbound_id: m.outbound.outbound_id, status: 'enviado', gmail_message_id: found.id,\n  gmail_thread_id: found.threadId, verified_by: 'busca_rfc822msgid', workflow: 'enviar_email', execution_id: $execution.id } : null } }];"
+      }
+    },
+    {
+      "id": "a7119c1d-ed0f-6cc9-a051-3117048730ac",
+      "name": "Já enviado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        280
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fd92e986-339a-4358-8831-1e61f57e1f1b",
+              "leftValue": "={{ $json.already_sent }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c5e6279c-0cb0-7134-84b3-3aaad6802db6",
+      "name": "Enviar pela Gmail API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        420
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.r.api.gmail_base }}/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "options": {
+          "timeout": 45000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "nodeCredentialType": "gmailOAuth2",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Montar mensagem').first().json.gmail_body) }}"
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "agGmailOAuth0001",
+          "name": "Agente Gmail OAuth2"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": false
+    },
+    {
+      "id": "c0bf52ec-f16f-eea0-e9c8-904ce451e701",
+      "name": "Interpretar envio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "\nfunction httpResult(j) {\n  if (!j || j.error) {\n    const e = (j && j.error) || {};\n    return { ok: false, status: Number(e.httpCode || e.status || 0) || 0, body: null, error: String(e.message || e.description || e || 'erro_de_rede').slice(0, 500) };\n  }\n  const status = Number(j.statusCode || 0);\n  return { ok: status >= 200 && status < 300, status, body: j.body, error: status >= 200 && status < 300 ? null : JSON.stringify(j.body || {}).slice(0, 500) };\n}\nconst m = $('Montar mensagem').first().json;\nconst r = httpResult($input.first().json);\nlet status;\nif (r.ok && r.body && r.body.id) status = 'enviado';\nelse if (r.status >= 400 && r.status < 500 && r.status !== 408 && r.status !== 429) status = 'falhou';  // rejeição definitiva\nelse status = 'desconhecido';  // timeout/5xx: pode ter sido aceito; a próxima tentativa verifica antes de reenviar\nreturn [{ json: { record: { outbound_id: m.outbound.outbound_id, status, gmail_message_id: r.ok ? r.body.id : null,\n  gmail_thread_id: r.ok ? r.body.threadId : null, error: r.error, http_status: r.status,\n  from_email: $('Preparar').first().json.input.settings.agent.email, workflow: 'enviar_email', execution_id: $execution.id } } }];"
+      }
+    },
+    {
+      "id": "02206b7a-01d8-b8de-14f5-653d3aee5f07",
+      "name": "Registrar resultado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2860,
+        140
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.record_send_result($1::jsonb) AS r",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.record)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "6e5642bb-8391-d2b7-d2e9-c208afd8f5d2",
+      "name": "Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        280
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{ json: $input.first().json.r }];"
+      }
+    },
+    {
+      "id": "80139807-751f-ffe3-de46-01f02600baff",
+      "name": "Resultado sem envio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const o = $input.first().json.outbound; return [{ json: { outbound_id: o.outbound_id, status: o.status, gmail_message_id: o.gmail_message_id || null, attempts: o.attempts || null } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Preparar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar": {
+      "main": [
+        [
+          {
+            "node": "Reservar envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservar envio": {
+      "main": [
+        [
+          {
+            "node": "Montar mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar mensagem": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuração": {
+      "main": [
+        [
+          {
+            "node": "Deve enviar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deve enviar?": {
+      "main": [
+        [
+          {
+            "node": "Verificar antes?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resultado sem envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar antes?": {
+      "main": [
+        [
+          {
+            "node": "Buscar enviado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar pela Gmail API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar enviado": {
+      "main": [
+        [
+          {
+            "node": "Avaliar verificação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avaliar verificação": {
+      "main": [
+        [
+          {
+            "node": "Já enviado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Já enviado?": {
+      "main": [
+        [
+          {
+            "node": "Registrar resultado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar pela Gmail API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar pela Gmail API": {
+      "main": [
+        [
+          {
+            "node": "Interpretar envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interpretar envio": {
+      "main": [
+        [
+          {
+            "node": "Registrar resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar resultado": {
+      "main": [
+        [
+          {
+            "node": "Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "AgAlertas0000001"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

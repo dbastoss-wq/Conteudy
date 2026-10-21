@@ -1,0 +1,195 @@
+{
+  "id": "AgAlertas0000001",
+  "name": "Agente | Alertas de falha",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "8e6fa2a4-f389-bafe-1da5-ccc5a1c3d182",
+      "name": "Falha em workflow",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        220,
+        140
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dde3c5d4-5f8a-f69c-f583-90ea9ed687d7",
+      "name": "Configuração",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        440,
+        280
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.settings_get() AS r",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "55d5f0a6-39a7-713b-7dec-44dc5854999f",
+      "name": "Montar alerta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        420
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const e = $('Falha em workflow').first().json;\nconst s = $input.first().json.r;\nconst exec = e.execution || {}; const wf = e.workflow || {}; const err = exec.error || (e.trigger && e.trigger.error) || {};\nconst id = exec.id || ('trigger-' + Date.now());\n// No máximo um alerta por workflow + erro + hora: um erro persistente não vira um e-mail a cada ciclo.\nconst sig = require('crypto').createHash('sha1').update(String(wf.id) + '|' + String(err.message || '').replace(/d+/g, '#')).digest('hex').slice(0, 16);\nconst bucket = new Date().toISOString().slice(0, 13);\nreturn [{ json: {\n  log: { workflow: wf.name, execution_id: String(id), entity_type: 'execution', entity_id: String(id), action: 'falha_workflow', status: 'erro',\n    detail: { node: exec.lastNodeExecuted, message: err.message, url: exec.url } },\n  mail: { settings: s, kind: 'alerta', idempotency_key: 'alerta:execucao:' + sig + ':' + bucket, to: [s.alert_email || (s.escalation || {}).contact_email],\n    subject: '[Agente] Falha no workflow ' + wf.name,\n    body_text: 'Workflow: ' + wf.name + '\\nExecução: ' + id + '\\nNó: ' + (exec.lastNodeExecuted || '?') + '\\nErro: ' + (err.message || '?') +\n      '\\nLink: ' + (exec.url || '(sem link)') + '\\n\\nAs mensagens afetadas são reprocessadas automaticamente até o limite de tentativas.' } } }];"
+      }
+    },
+    {
+      "id": "96979921-9bca-918b-efa2-2037ad6b1ccd",
+      "name": "Registrar falha",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.log($1::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json.log)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "77898560-c205-f089-f6ac-c4d08d7ce1e0",
+      "name": "E-mail de alerta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        140
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{ json: $('Montar alerta').first().json.mail }];"
+      }
+    },
+    {
+      "id": "2bbaad6a-001a-6028-42b9-407cdce18a13",
+      "name": "Enviar alerta",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        280
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "AgEnviarEmail001",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Falha em workflow": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuração": {
+      "main": [
+        [
+          {
+            "node": "Montar alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar alerta": {
+      "main": [
+        [
+          {
+            "node": "Registrar falha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar falha": {
+      "main": [
+        [
+          {
+            "node": "E-mail de alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-mail de alerta": {
+      "main": [
+        [
+          {
+            "node": "Enviar alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
