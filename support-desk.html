@@ -1,0 +1,854 @@
+<title>Conteudy Support Desk</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,680&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@380;500;640&display=swap">
+<style>
+/* Layout: workflow rail | thread list | thread (messages + AI draft, customer + Calendly side column). Analytics swaps in for list + thread. */
+:root{
+  --ink:#101712; --panel:#18241c; --field:#132018; --moss:#243828; --raised:#1c2b22; --hover:#1f3026; --bubble:#2a4032;
+  --line:#2c4034; --line-strong:#3d5646;
+  --text:#f3efe4; --muted:#b7c3b6; --faint:#8fa092;
+  --gold:#e7b15a; --on-gold:#1b1408; --leaf:#7ea37a; --danger:#e39a86;
+  --s-new:#8fb7dc; --s-drafted:#9cc596; --s-review:#d6a8dc; --s-waiting:#cbc39c; --s-scheduled:#7cc7b9; --s-resolved:#8fa092; --s-escalated:#e39a86;
+  --display:"Fraunces", Georgia, serif;
+  --sans:"Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:radial-gradient(900px 420px at 10% -10%, var(--moss) 0%, transparent 55%) no-repeat, var(--ink);color:var(--text);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono);font-size:12px;color:var(--faint)}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:236px minmax(0,1fr);height:100%;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.rail{display:flex;flex-direction:column;gap:24px;padding:22px 16px;border-right:1px solid var(--line);overflow:auto;min-height:0}
+.mark{display:flex;align-items:center;gap:12px;padding-inline:6px}
+.mark-tile{width:40px;height:40px;border-radius:12px;background:var(--moss);display:grid;place-items:center;color:var(--gold);font-size:20px;flex:none}
+.mark b{display:block;font:680 22px/1.1 var(--display);font-optical-sizing:auto}
+.mark span{font-size:13px;color:var(--muted)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.rail-label{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);padding:0 10px 6px}
+.nav-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:transparent;cursor:pointer;text-align:left;font-weight:500}
+.nav-btn:hover{background:var(--hover)}
+.nav-btn[aria-current="true"]{background:var(--raised);box-shadow:inset 0 0 0 1px var(--line)}
+.nav-btn .count{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.nav-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--c,var(--muted));flex:none}
+.nav-btn .lbl{display:flex;align-items:center;gap:10px;min-width:0}
+.cal-card{margin-top:auto;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--field);font-size:13px;color:var(--muted);display:grid;gap:6px}
+.cal-card strong{color:var(--text);font-weight:640;display:flex;align-items:center;gap:8px}
+.ok-dot{width:8px;height:8px;border-radius:50%;background:var(--leaf)}
+.cal-card code{font:12px var(--mono);color:var(--text);word-break:break-all}
+
+.main{display:grid;grid-template-rows:auto minmax(0,1fr);min-width:0;min-height:0}
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 22px;border-bottom:1px solid var(--line)}
+.top h1{font:520 22px/1.2 var(--display);margin-right:auto}
+.search{display:flex;align-items:center;gap:8px;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:6px 14px;min-width:0;width:min(300px,100%)}
+.search input{border:0;background:transparent;outline:none;width:100%;min-width:0}
+.search:focus-within{border-color:var(--line-strong);outline:2px solid var(--gold);outline-offset:1px}
+.live{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);white-space:nowrap}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--leaf);box-shadow:0 0 0 0 var(--leaf);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(126,163,122,.55)}70%{box-shadow:0 0 0 8px rgba(126,163,122,0)}100%{box-shadow:0 0 0 0 rgba(126,163,122,0)}}
+.chip-sample{font-size:12px;color:var(--faint);border:1px dashed var(--line-strong);border-radius:999px;padding:2px 10px;white-space:nowrap}
+
+/* ---------- buttons, badges ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line-strong);background:var(--raised);border-radius:999px;padding:7px 14px;cursor:pointer;font-weight:500;font-size:14px;white-space:nowrap}
+.btn:hover{background:var(--hover);border-color:#4d6a57}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--gold);border-color:var(--gold);color:var(--on-gold);font-weight:640}
+.btn-primary:hover{background:#efbf70;border-color:#efbf70}
+.btn-quiet{background:transparent;border-color:transparent;color:var(--muted)}
+.btn-quiet:hover{background:var(--hover);color:var(--text);border-color:transparent}
+.badge{--c:var(--muted);display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;line-height:1.5;padding:1px 9px 1px 8px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 13%,transparent);border:1px solid color-mix(in srgb,var(--c) 32%,transparent);white-space:nowrap}
+.badge i{width:6px;height:6px;border-radius:50%;background:var(--c)}
+.s-new{--c:var(--s-new)} .s-drafted{--c:var(--s-drafted)} .s-review{--c:var(--s-review)} .s-waiting{--c:var(--s-waiting)}
+.s-scheduled{--c:var(--s-scheduled)} .s-resolved{--c:var(--s-resolved)} .s-escalated{--c:var(--s-escalated)}
+.badge.s-new i,.badge.busy i{animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.tag{font-size:12px;color:var(--muted);padding:1px 8px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
+.tag.warn{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+.tag.good{color:var(--s-drafted);border-color:color-mix(in srgb,var(--s-drafted) 35%,transparent)}
+
+/* ---------- inbox ---------- */
+.inbox{display:grid;grid-template-columns:minmax(290px,370px) minmax(0,1fr);min-height:0}
+.list{border-right:1px solid var(--line);overflow:auto;min-height:0}
+.list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);position:sticky;top:0;background:var(--ink);z-index:1}
+.filter-select{display:none;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.thread{display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;width:100%;text-align:left;padding:14px 16px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer}
+.thread:hover{background:var(--hover)}
+.thread[aria-current="true"]{background:var(--raised)}
+.thread.fresh{animation:arrive 1.6s ease-out}
+@keyframes arrive{from{background:color-mix(in srgb,var(--s-new) 18%,transparent)}to{background:transparent}}
+.av{width:36px;height:36px;border-radius:12px;background:var(--moss);display:grid;place-items:center;font-weight:640;font-size:13px;letter-spacing:.02em}
+.t-body{min-width:0;display:grid;gap:2px}
+.t-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.t-name{font-weight:640;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thread.unread .t-name::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--s-new);margin-right:7px;vertical-align:2px}
+.t-time{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;flex:none}
+.t-subj{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-prev{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.t-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.list-empty{padding:28px 16px;color:var(--muted);font-size:14px}
+
+.detail{overflow:auto;min-height:0;min-width:0}
+.d-head{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 16px;padding:18px 22px;border-bottom:1px solid var(--line)}
+.d-title{flex:1 1 320px;min-width:0;display:grid;gap:8px}
+.d-title h2{font:520 21px/1.25 var(--display)}
+.d-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.d-actions{display:flex;gap:8px;flex-wrap:wrap}
+.back{display:none}
+.d-grid{display:grid;grid-template-columns:minmax(0,1fr) 312px;gap:22px;padding:22px;align-items:start}
+.d-main,.d-side{display:grid;gap:16px;min-width:0}
+.msgs{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.msg{border:1px solid var(--line);background:var(--raised);border-radius:16px;padding:14px 16px;max-width:680px}
+.msg.agent{background:var(--bubble);border-color:transparent;justify-self:end;width:min(100%,640px)}
+.msg-h{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap}
+.msg-h b{color:var(--text);font-weight:640}
+.msg p{margin:0;white-space:pre-wrap;font-weight:380;overflow-wrap:anywhere}
+.attach{display:inline-flex;gap:6px;margin-top:10px;font:12px var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:3px 8px}
+
+/* AI draft */
+.draft{border:1px solid var(--line-strong);background:var(--panel);border-radius:16px;overflow:hidden}
+.draft-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.draft-h h3{font:640 15px/1.2 var(--sans);display:flex;align-items:center;gap:8px}
+.draft-h h3 .glyph{color:var(--gold)}
+.conf{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.meter{width:96px;height:6px;border-radius:999px;background:var(--field);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.meter span{display:block;height:100%;border-radius:inherit;background:var(--c)}
+.draft-b{padding:14px 16px;display:grid;gap:12px}
+.why{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:flex-start}
+.why b{color:var(--s-review);font-weight:500}
+.tones{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tones .lbl{font-size:12px;color:var(--faint);margin-right:4px}
+.tone{border:1px solid var(--line);background:transparent;border-radius:999px;padding:3px 12px;font-size:13px;cursor:pointer;color:var(--muted)}
+.tone:hover{color:var(--text);border-color:var(--line-strong)}
+.tone[aria-pressed="true"]{background:var(--bubble);color:var(--text);border-color:var(--line-strong)}
+#draft-text{width:100%;min-height:210px;resize:vertical;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:14px;line-height:1.55;font-weight:380;outline:none}
+#draft-text:focus{border-color:var(--line-strong);outline:2px solid var(--gold);outline-offset:1px}
+#draft-text.streaming{caret-color:transparent;border-color:color-mix(in srgb,var(--s-drafted) 45%,transparent)}
+.sources{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--faint)}
+.draft-f{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--line);background:var(--field)}
+.draft-f .note{font-size:12px;color:var(--faint)}
+.draft-f .acts{display:flex;gap:8px;flex-wrap:wrap}
+.draft-state{padding:18px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;color:var(--muted);font-size:14px}
+.skeleton{display:grid;gap:8px;padding:16px}
+.skeleton span{height:10px;border-radius:6px;background:linear-gradient(90deg,var(--field),var(--hover),var(--field));background-size:200% 100%;animation:shimmer 1.4s linear infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* side cards */
+.card{border:1px solid var(--line);background:var(--raised);border-radius:14px;padding:16px;display:grid;gap:12px;min-width:0}
+.card h3{font:640 14px/1.3 var(--sans);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card h3 small{font-weight:400;font-size:12px;color:var(--faint)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;font-size:13px;margin:0}
+.kv dt{color:var(--faint)}
+.kv dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.cust{display:flex;gap:12px;align-items:center}
+.cust .av{width:42px;height:42px;font-size:14px}
+.cust b{display:block;font-weight:640}
+.cust span{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+
+.etypes{display:grid;gap:6px}
+.etype{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);background:var(--field);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:13px}
+.etype:hover{border-color:var(--line-strong)}
+.etype[aria-pressed="true"]{border-color:var(--s-scheduled);background:color-mix(in srgb,var(--s-scheduled) 10%,var(--field))}
+.etype small{color:var(--faint);font-variant-numeric:tabular-nums}
+.days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.day{border:1px solid var(--line);background:transparent;border-radius:10px;padding:6px 0;cursor:pointer;display:grid;line-height:1.2;font-size:12px;color:var(--muted)}
+.day b{font-size:16px;color:var(--text);font-weight:640;font-variant-numeric:tabular-nums}
+.day[aria-pressed="true"]{background:var(--bubble);border-color:var(--line-strong);color:var(--text)}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.slot{border:1px solid var(--line);background:var(--field);border-radius:8px;padding:6px 0;font-size:13px;cursor:pointer;font-variant-numeric:tabular-nums}
+.slot:hover:not(:disabled){border-color:var(--s-scheduled)}
+.slot:disabled{color:var(--faint);text-decoration:line-through;cursor:not-allowed;opacity:.6}
+.slot[aria-pressed="true"]{background:var(--s-scheduled);border-color:var(--s-scheduled);color:#0d1f1b;font-weight:640}
+.tz{font-size:12px;color:var(--faint)}
+.booked{border:1px solid color-mix(in srgb,var(--s-scheduled) 40%,transparent);background:color-mix(in srgb,var(--s-scheduled) 9%,transparent);border-radius:10px;padding:10px 12px;font-size:13px;display:grid;gap:4px}
+.booked b{color:var(--s-scheduled);font-weight:640}
+.booked code{font:11.5px var(--mono);color:var(--muted);word-break:break-all}
+
+.empty{display:grid;place-items:center;height:100%;min-height:320px;padding:28px;text-align:center;color:var(--muted)}
+.empty b{display:block;font:520 20px var(--display);color:var(--text);margin-bottom:6px}
+
+/* ---------- analytics ---------- */
+.an{overflow:auto;min-height:0;padding:22px;display:grid;gap:16px;align-content:start}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{border:1px solid var(--line);background:var(--raised);border-radius:14px;padding:14px 16px;display:grid;gap:4px;min-width:0}
+.kpi .k-l{font-size:12px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+.kpi .k-v{font:640 28px/1.15 var(--sans);font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:6px}
+.kpi .k-v small{font-size:14px;color:var(--muted);font-weight:500}
+.kpi .k-d{font-size:12px;color:var(--muted)}
+.kpi .up{color:var(--s-drafted)} .kpi .down{color:var(--danger)}
+.kpi svg{width:100%;height:30px;display:block;margin-top:4px}
+.an-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px}
+.an-row.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:3px;border-radius:2px;background:var(--c)}
+.chart{width:100%;height:240px}
+.chart svg{display:block;width:100%;height:100%}
+.chart text{fill:var(--faint);font:11px var(--sans);font-variant-numeric:tabular-nums}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .ln{fill:none;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.chart .ln.in{stroke:var(--s-new)} .chart .ln.res{stroke:var(--s-drafted)}
+.chart .ar{stroke:none} .chart .ar.in{fill:var(--s-new);fill-opacity:.12}
+.chart .end.in{fill:var(--s-new)} .chart .end.res{fill:var(--s-drafted)}
+.chart .end-lbl{fill:var(--text);font-weight:640}
+.bars{display:grid;gap:10px}
+.bar{display:grid;grid-template-columns:118px minmax(0,1fr) 34px;gap:10px;align-items:center;font-size:13px}
+.bar .track,.bar .fill{display:block}
+.bar .track{height:8px;border-radius:999px;background:var(--field);overflow:hidden}
+.bar .fill{height:100%;border-radius:inherit;background:var(--c,var(--muted));transition:width .5s ease}
+.bar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.bar .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stack{display:flex;height:14px;border-radius:999px;overflow:hidden;gap:2px}
+.stack span{background:var(--c);transition:flex-grow .5s ease}
+.stack-legend{display:grid;gap:8px;font-size:13px}
+.stack-legend div{display:flex;justify-content:space-between;gap:8px}
+.stack-legend span{display:inline-flex;align-items:center;gap:8px;color:var(--muted)}
+.stack-legend i{width:9px;height:9px;border-radius:3px;background:var(--c)}
+.feed{list-style:none;margin:0;padding:0;display:grid;gap:0;max-height:260px;overflow:auto}
+.feed li{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.feed li:last-child{border-bottom:0}
+.feed i{width:8px;height:8px;border-radius:50%;background:var(--c);align-self:center}
+.feed time{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.feed li.fresh{animation:arrive 1.6s ease-out}
+
+/* toasts */
+.toasts{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;z-index:20;max-width:min(360px,calc(100vw - 32px))}
+.toast{background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;padding:10px 14px;font-size:14px;display:flex;gap:10px;align-items:center;animation:toast-in .25s ease-out}
+.toast i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--leaf));flex:none}
+@keyframes toast-in{from{transform:translateY(8px);opacity:0}}
+
+/* ---------- responsive ---------- */
+@media (max-width:1240px){
+  .d-grid{grid-template-columns:minmax(0,1fr)}
+  .d-side{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));align-items:start}
+  .an-row.three{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+}
+@media (max-width:1000px){ .an-row{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:860px){
+  html,body{height:auto}
+  .app{grid-template-columns:minmax(0,1fr);height:auto;min-height:100%}
+  .rail{flex-direction:row;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 16px;border-right:0;border-bottom:1px solid var(--line);overflow:visible}
+  .rail .mark{padding:0;margin-right:auto}
+  .rail .mark-tile{width:34px;height:34px}
+  .rail .mark span{display:none}
+  .rail .nav{flex-direction:row}
+  .rail .rail-label,.rail .filters,.cal-card{display:none}
+  .top{padding:12px 16px}
+  .search{width:100%;order:3}
+  .inbox{grid-template-columns:minmax(0,1fr)}
+  .list,.detail,.an{overflow:visible}
+  .list{border-right:0}
+  .filter-select{display:block}
+  .detail{display:none}
+  .inbox.show-detail .list{display:none}
+  .inbox.show-detail .detail{display:block}
+  .back{display:inline-flex}
+  .d-head,.d-grid{padding:16px}
+  .an{padding:16px}
+  .bar{grid-template-columns:96px minmax(0,1fr) 30px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<div class="app">
+  <aside class="rail" aria-label="Navigation">
+    <div class="mark">
+      <div class="mark-tile" aria-hidden="true">✦</div>
+      <div><b>Conteudy</b><span>support desk</span></div>
+    </div>
+    <nav class="nav" aria-label="Views">
+      <button class="nav-btn" data-view="inbox" id="nav-inbox"><span class="lbl">Inbox</span><span class="count" id="count-open"></span></button>
+      <button class="nav-btn" data-view="analytics" id="nav-analytics"><span class="lbl">Analytics</span><span class="count">Live</span></button>
+    </nav>
+    <div class="filters">
+      <div class="rail-label">Workflow</div>
+      <div class="nav" id="filters"></div>
+    </div>
+    <div class="cal-card">
+      <strong><span class="ok-dot" aria-hidden="true"></span>Calendly connected</strong>
+      <code>calendly.com/conteudy-support</code>
+      <span>3 event types · synced 2 min ago</span>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <h1 id="view-title">Inbox</h1>
+      <label class="search"><span class="muted" aria-hidden="true">⌕</span><input id="q" type="search" placeholder="Search people, subjects, intents" aria-label="Search threads"></label>
+      <span class="live"><i aria-hidden="true"></i><span id="updated">Live · updated just now</span></span>
+      <span class="chip-sample" title="Every thread, customer and number on this page is example data.">Sample data</span>
+    </header>
+
+    <section class="inbox" id="view-inbox">
+      <div class="list" id="list-wrap">
+        <div class="list-head">
+          <span id="list-count"></span>
+          <select id="filter-select" class="filter-select" aria-label="Filter by workflow status"></select>
+        </div>
+        <div id="list"></div>
+      </div>
+      <div class="detail" id="detail"></div>
+    </section>
+
+    <section class="an" id="view-analytics" hidden>
+      <div class="kpis" id="kpis"></div>
+      <div class="an-row">
+        <div class="card">
+          <h3>Email volume <small>last 2 hours · 5-minute buckets</small></h3>
+          <div class="legend"><span style="--c:var(--s-new)"><i></i>Incoming</span><span style="--c:var(--s-drafted)"><i></i>Resolved</span></div>
+          <div class="chart" id="chart"></div>
+        </div>
+        <div class="card">
+          <h3>Live activity <small id="feed-count"></small></h3>
+          <ol class="feed" id="feed"></ol>
+        </div>
+      </div>
+      <div class="an-row three">
+        <div class="card"><h3>Workflow pipeline <small>open now</small></h3><div class="bars" id="pipe"></div></div>
+        <div class="card"><h3>Intent mix <small>this week</small></h3><div class="bars" id="intents"></div></div>
+        <div class="card"><h3>AI draft outcomes <small>this week</small></h3><div id="outcomes" style="display:grid;gap:14px"></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(() => {
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MIN = 60000, NOW = Date.now();
+const SIG = '\n\n— Conteudy Support';
+
+const STATUS = {
+  new:       {label:'New'},
+  drafted:   {label:'AI drafted'},
+  review:    {label:'Needs review'},
+  waiting:   {label:'Waiting on customer'},
+  scheduled: {label:'Meeting booked'},
+  escalated: {label:'Escalated'},
+  resolved:  {label:'Resolved'},
+};
+const ORDER = Object.keys(STATUS);
+const EVENT_TYPES = [
+  {id:'quick',   name:'Quick help',          mins:15, slug:'quick-help-15'},
+  {id:'onboard', name:'Onboarding call',     mins:30, slug:'onboarding-30'},
+  {id:'deep',    name:'Technical deep dive', mins:45, slug:'deep-dive-45'},
+];
+const TZ = (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+
+// next five weekdays, starting tomorrow
+const DAYS = (() => {
+  const out = []; const d = new Date(); d.setHours(0,0,0,0);
+  while (out.length < 5) { d.setDate(d.getDate() + 1); if (d.getDay() % 6) out.push(new Date(d)); }
+  return out;
+})();
+const fmtDay = d => d.toLocaleDateString('en-US', {weekday:'short', day:'numeric', month:'short'});
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+const m = (from, name, minsAgo, body, attach) => ({from, name, at: NOW - minsAgo*MIN, body, attach});
+
+/* ---------- sample threads ---------- */
+const threads = [
+ {id:'CS-4821', name:'Priya Raman', email:'priya.r@northwindfoods.com', company:'Northwind Foods', plan:'Trial', mrr:'Trial ends in 6 days', since:'Oct 2026', tickets:1,
+  sentiment:'Positive', intent:'Onboarding', status:'new', conf:95, meetType:'onboard', unread:true, drafting:true,
+  subject:'Can we get an onboarding call for our team?',
+  messages:[m('customer','Priya Raman',3,"Hi! We're a team of 6 trialling Conteudy for our restaurant group's social accounts. Could someone walk us through setting up approval workflows?\n\nMost of us are free Thursday or Friday mornings.\n\nThanks,\nPriya")],
+  sources:['Approval workflows · HC-031','Trial onboarding playbook'],
+  drafts:{
+   friendly:"Hi Priya,\n\nWelcome aboard, and thanks for reaching out. A 30-minute onboarding call works well for a team of six: we'll set up your brand workspaces, add your approvers and build a first posting calendar together.\n\nPick a Thursday or Friday morning slot and I'll send the invite to everyone on your team."+SIG,
+   concise:"Hi Priya,\n\nHappy to help. A 30-minute onboarding call covers workspaces, approvers and your first posting calendar. Choose a Thursday or Friday morning slot and I'll invite the team."+SIG,
+   formal:"Dear Priya,\n\nThank you for trialling Conteudy. We would be glad to guide your team through approval workflows in a 30-minute onboarding session, covering workspace setup, approver roles and an initial posting calendar.\n\nPlease select a convenient Thursday or Friday morning time and we will send invitations to your team."+SIG}},
+ {id:'CS-4817', name:'Marta Silva', email:'marta@lumenstudio.co', company:'Lumen Studio', plan:'Pro', mrr:'$149/mo', since:'Mar 2024', tickets:6,
+  sentiment:'Frustrated', intent:'Billing', status:'review', conf:74, meetType:'quick', unread:true,
+  review:'Refunds over $100 need a person to approve.',
+  subject:'Refund for duplicate charge on October invoice',
+  messages:[m('customer','Marta Silva',12,"Hi,\n\nI was charged twice for October. Both charges are $149 and both reference invoice INV-20418. Can you refund the duplicate?\n\nThis is the second time this year, so I'd also like to know why it keeps happening.\n\nMarta")],
+  sources:['Refund policy · HC-112','Stripe charge log · Oct 1','Billing retries · HC-087'],
+  drafts:{
+   friendly:"Hi Marta,\n\nThanks for flagging this, and I'm sorry it happened again. I can see two $149 charges against INV-20418 on Oct 1. I've requested a refund for the duplicate; it usually reaches your card in 5–7 business days.\n\nThe double charge came from an automatic retry after your bank's first response timed out. We've switched your account to single-attempt billing so it won't repeat."+SIG,
+   concise:"Hi Marta,\n\nConfirmed: INV-20418 was charged twice on Oct 1. The duplicate $149 is being refunded and should arrive in 5–7 business days. We've turned off payment retries on your account so this doesn't happen again."+SIG,
+   formal:"Dear Marta,\n\nThank you for contacting us. We have confirmed a duplicate charge of $149 on October 1 for invoice INV-20418. A refund for the duplicate amount has been requested and will be credited within 5–7 business days.\n\nThe duplicate resulted from an automatic payment retry. We have disabled retries on your account to prevent a recurrence, and we apologise for the inconvenience."+SIG}},
+ {id:'CS-4809', name:'Daniel Okafor', email:'daniel@brightline.media', company:'Brightline Media', plan:'Business', mrr:'$399/mo', since:'Jan 2023', tickets:14,
+  sentiment:'Concerned', intent:'Integrations', status:'drafted', conf:88, meetType:'deep',
+  subject:'Google Ads conversions stopped syncing since Monday',
+  messages:[
+   m('customer','Daniel Okafor',190,"Our Google Ads conversion imports stopped on Monday. The last successful sync in Conteudy shows Oct 19, 23:40. Nothing changed on our side as far as I know."),
+   m('agent','Support team',130,"Thanks Daniel. Could you check whether the Google Ads account still shows Conteudy under Linked accounts? A screenshot of Tools → Data manager would help."),
+   m('customer','Daniel Okafor',34,"Conteudy is still linked, screenshot attached. We have a client report due Friday, so I'd appreciate a fast fix.",'data-manager.png · 412 KB')],
+  sources:['Google Ads sync log · Oct 19 23:40','Reconnect Google Ads · HC-204','Incident INC-311'],
+  drafts:{
+   friendly:"Hi Daniel,\n\nThanks for the screenshot, that helps. The link itself is fine. The sync stopped because Google rotated the OAuth token for your manager account on Oct 19 and our refresh failed.\n\nOpen Settings → Integrations → Google Ads and click Reconnect. Conversions from Oct 19 onward will backfill within about an hour, well before Friday.\n\nIf you'd rather walk through it together, I can hold a slot for a quick call."+SIG,
+   concise:"Hi Daniel,\n\nThe link is fine; Google rotated your manager account's OAuth token on Oct 19 and our refresh failed. Go to Settings → Integrations → Google Ads → Reconnect. Data from Oct 19 onward backfills within about an hour."+SIG,
+   formal:"Dear Daniel,\n\nThank you for the screenshot. The account link is intact; the interruption was caused by an OAuth token rotation on Google's side on October 19, which our system failed to refresh.\n\nPlease reconnect via Settings → Integrations → Google Ads. Conversion data from October 19 onward will be backfilled within approximately one hour."+SIG}},
+ {id:'CS-4803', name:'Hannah Becker', email:'h.becker@orbitlabs.io', company:'Orbit Labs', plan:'Enterprise', mrr:'$2,400/mo', since:'Jun 2022', tickets:22,
+  sentiment:'Neutral', intent:'Security', status:'escalated', conf:61, meetType:'deep',
+  review:'Security reviews go to the security team.',
+  subject:'Security questionnaire and SSO setup before renewal',
+  messages:[m('customer','Hannah Becker',125,"Hello,\n\nOur security team needs the completed vendor questionnaire (attached, 84 questions) and details on SAML SSO with Okta before we can renew in November.\n\nBest,\nHannah",'orbit-vendor-review.xlsx · 88 KB')],
+  sources:['SAML SSO with Okta · HC-402','Trust center · SOC 2 Type II'],
+  drafts:{
+   friendly:"Hi Hannah,\n\nThanks for sending this over. I've passed the questionnaire to our security team, who handle enterprise reviews; you'll hear from them within 3 business days, comfortably ahead of your November renewal.\n\nIn the meantime, our Okta SAML guide covers the full setup, and our SOC 2 Type II report is available under NDA."+SIG,
+   concise:"Hi Hannah,\n\nThe questionnaire is with our security team; expect their answers within 3 business days. Our Okta SAML guide is linked, and the SOC 2 Type II report is available under NDA."+SIG,
+   formal:"Dear Hannah,\n\nThank you for providing the vendor questionnaire. It has been forwarded to our security team, who will respond within three business days.\n\nPlease find our SAML SSO configuration guide for Okta attached. Our SOC 2 Type II report can be shared upon execution of an NDA."+SIG}},
+ {id:'CS-4796', name:'Grace Mensah', email:'grace@kiteanalytics.com', company:'Kite Analytics', plan:'Business', mrr:'$399/mo', since:'Aug 2025', tickets:3,
+  sentiment:'Positive', intent:'Sales', status:'scheduled', conf:92, meetType:'onboard',
+  meeting:{type:'Onboarding call', mins:30, day:1, time:'14:00'},
+  subject:'Demo of the Agency plan for 12 client brands',
+  messages:[
+   m('customer','Grace Mensah',260,"We manage 12 client brands. Could we see how the Agency plan handles client approvals and white-label reports?"),
+   m('agent','Support team',180,"Hi Grace, I've booked a 30-minute walkthrough. You'll get a calendar invite from Calendly with the call link.")],
+  sources:['Agency plan overview','White-label reports · HC-260'],
+  drafts:{
+   friendly:"Hi Grace,\n\nA quick note before our call: if you share two or three client brand names, I'll set up a sandbox with them so the demo looks like your own workspace."+SIG,
+   concise:"Hi Grace,\n\nBefore our call, send two or three client brand names and I'll prepare a sandbox with them."+SIG,
+   formal:"Dear Grace,\n\nIn preparation for our demonstration, you are welcome to share two or three client brand names, and we will configure a sandbox environment accordingly."+SIG}},
+ {id:'CS-4788', name:'Tomás Ruiz', email:'tomas@pixelandpine.com', company:'Pixel & Pine', plan:'Pro', mrr:'$149/mo', since:'Nov 2024', tickets:4,
+  sentiment:'Frustrated', intent:'Bug', status:'waiting', conf:83, meetType:'quick',
+  subject:'Scheduled post published at the wrong time',
+  messages:[
+   m('customer','Tomás Ruiz',420,"A post scheduled for 9:00 went out at 12:00 on Instagram. Our workspace timezone is Europe/Madrid."),
+   m('agent','Support team',300,"Thanks Tomás. I've reproduced it: posts created from the mobile app used the phone's timezone instead of the workspace's. A fix ships tomorrow. Until then, scheduling from the web app uses the right time.")],
+  sources:['Release notes 4.18.2','BUG-1872'],
+  drafts:{
+   friendly:"Hi Tomás,\n\nQuick update: the timezone fix shipped this morning in release 4.18.2. Posts scheduled from the mobile app now use your workspace timezone. Let me know if anything still looks off."+SIG,
+   concise:"Hi Tomás,\n\nFixed in 4.18.2, released this morning. Mobile-scheduled posts now follow the workspace timezone."+SIG,
+   formal:"Dear Tomás,\n\nWe are pleased to confirm that release 4.18.2, published this morning, resolves the timezone issue. Posts scheduled from the mobile app now use the workspace timezone."+SIG}},
+ {id:'CS-4781', name:'Lucas Ferreira', email:'lucas@casaverde.com.br', company:'Casa Verde', plan:'Starter', mrr:'$29/mo', since:'Feb 2026', tickets:2,
+  sentiment:'Neutral', intent:'How-to', status:'drafted', conf:97, meetType:'quick',
+  subject:'How do I move posts between workspaces?',
+  messages:[m('customer','Lucas Ferreira',70,"Is there a way to move scheduled posts from one workspace to another? We split our brand into two workspaces and now the posts are in the wrong place.")],
+  sources:['Move posts between workspaces · HC-145'],
+  drafts:{
+   friendly:"Hi Lucas,\n\nYes, you can. Open the Calendar in the original workspace, select the posts (Shift-click selects a range), then choose Move to workspace from the Actions menu. Scheduled times and media come along; approval history stays in the original workspace."+SIG,
+   concise:"Hi Lucas,\n\nCalendar → select posts (Shift-click for a range) → Actions → Move to workspace. Times and media move with them; approval history stays behind."+SIG,
+   formal:"Dear Lucas,\n\nScheduled posts can be moved from the Calendar view: select the relevant posts, then choose Move to workspace from the Actions menu. Scheduled times and media are retained; approval history remains in the original workspace."+SIG}},
+ {id:'CS-4770', name:'Aiko Tanaka', email:'aiko@ferrocoffee.jp', company:'Ferro Coffee', plan:'Business', mrr:'$399/mo', since:'May 2023', tickets:9,
+  sentiment:'Positive', intent:'Reporting', status:'resolved', conf:96, meetType:'quick',
+  subject:'Thanks, the report export works now',
+  messages:[
+   m('agent','Support team',1600,"Hi Aiko, we've fixed the PDF export for reports with more than 40 posts. Could you try again?"),
+   m('customer','Aiko Tanaka',1480,"Thanks, the PDF export works now. The team is happy.")],
+  sources:['Report exports · HC-310'],
+  drafts:{
+   friendly:"Hi Aiko,\n\nGreat to hear. I'll close this thread; reply any time if exports act up again."+SIG,
+   concise:"Hi Aiko,\n\nGlad it's working. Closing this thread now."+SIG,
+   formal:"Dear Aiko,\n\nThank you for confirming. We will close this request; please do not hesitate to contact us again."+SIG}},
+];
+
+const POOL = [
+ {id:'CS-4824', name:'Kwame Asante', email:'kwame@lagoonrecords.com', company:'Lagoon Records', plan:'Starter', mrr:'$29/mo', since:'Sep 2026', tickets:1,
+  sentiment:'Concerned', intent:'Integrations', conf:86, meetType:'quick',
+  subject:"Can't connect our TikTok business account",
+  body:"Every time I try to connect our TikTok business account I get \"Authorization failed (code 10007)\". I'm an admin on the account.",
+  sources:['Connect TikTok · HC-221','Error 10007 · business center roles'],
+  draft:"Hi Kwame,\n\nError 10007 means the TikTok Business Center hasn't granted Conteudy access to that ad account yet, even for admins. In Business Center, open Users → Partners, approve Conteudy, then try Connect again.\n\nIf it still fails, I can hold a 15-minute slot to sort it out together."},
+ {id:'CS-4826', name:'Sofia Lindqvist', email:'sofia@nordvik.se', company:'Nordvik Outdoor', plan:'Pro', mrr:'$149/mo', since:'Apr 2025', tickets:2,
+  sentiment:'Neutral', intent:'Billing', conf:94, meetType:'quick',
+  subject:'Invoice address needs to change',
+  body:"We moved offices. Can future invoices go to Sveavägen 44, 111 34 Stockholm? Our VAT number stays the same.",
+  sources:['Update billing details · HC-090'],
+  draft:"Hi Sofia,\n\nDone: future invoices will show Sveavägen 44, 111 34 Stockholm, with your VAT number unchanged. You can also edit this yourself any time under Settings → Billing → Invoice details."},
+ {id:'CS-4829', name:'Elena Petrova', email:'elena@studiomira.com', company:'Studio Mira', plan:'Business', mrr:'$399/mo', since:'Dec 2024', tickets:7,
+  sentiment:'Frustrated', intent:'Bug', conf:79, meetType:'deep',
+  subject:'Bulk upload CSV keeps failing at row 41',
+  body:"Our bulk upload stops at row 41 with \"Invalid date\". The date there is 31/10/2026, same format as every other row.",
+  sources:['Bulk upload format · HC-133','Parser changelog'],
+  draft:"Hi Elena,\n\nRow 41 is the first row where the day is above 12, so the importer read it as month 31. Your workspace is set to MM/DD dates. Switch Settings → Region → Date format to DD/MM and re-run the upload, and every row will import."},
+];
+
+const BASE_INTENTS = {'How-to':58,'Billing':42,'Integrations':37,'Bug':21,'Onboarding':17,'Sales':14,'Security':6,'Reporting':9};
+
+const state = {
+  view:'inbox', filter:'all', q:'', sel:null,
+  feed:[], series:{inc:[], res:[]}, frt:[], lastTick:Date.now(),
+  out:{asis:118, edited:31, discarded:11}, bookedToday:3, aiRate:38.4,
+};
+threads.forEach(t => { t.tone = 'friendly'; t.sched = {type:t.meetType, day:0, slot:null}; t.at = t.messages[t.messages.length-1].at; });
+for (let i = 0; i < 24; i++) {
+  const inc = Math.round(11 + 5*Math.sin(i/3.6) + (i % 3));
+  state.series.inc.push(inc);
+  state.series.res.push(Math.max(2, inc - 2 + (i % 4 === 0 ? -2 : 1)));
+  state.frt.push(250 + Math.round(30*Math.sin(i/2.5)));
+}
+
+/* ---------- helpers ---------- */
+const cur = () => threads.find(t => t.id === state.sel);
+const initials = n => n.split(/\s+/).map(p => p[0]).slice(0,2).join('').toUpperCase();
+const first = n => n.split(' ')[0];
+function ago(t){ const s = Math.round((Date.now()-t)/1000); if (s < 45) return 'now'; const mm = Math.round(s/60); if (mm < 60) return mm+'m'; const h = Math.round(mm/60); if (h < 24) return h+'h'; return Math.round(h/24)+'d'; }
+const stamp = t => new Date(t).toLocaleString('en-US', {weekday:'short', hour:'numeric', minute:'2-digit'});
+const badge = (k, busy) => `<span class="badge s-${k}${busy?' busy':''}"><i></i>${busy?'AI drafting…':STATUS[k].label}</span>`;
+const confColor = c => c >= 90 ? 'var(--s-drafted)' : c >= 75 ? 'var(--s-waiting)' : 'var(--s-review)';
+const confLabel = c => c >= 90 ? 'High · safe to send' : c >= 75 ? 'Medium · skim before sending' : 'Low · needs a person';
+function slotLabel(t){ const [h,mi] = t.split(':').map(Number); const d = new Date(2000,0,1,h,mi); return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
+function calLink(type, day, time){ return `calendly.com/conteudy-support/${type.slug}/${iso(DAYS[day])}T${time}`; }
+function slotsFor(day, mins){
+  const out = []; const step = 30;
+  for (let x = 9*60; x + mins <= 17*60; x += step) {
+    if (x >= 12*60 && x < 13*60) continue; // lunch
+    const time = `${String(Math.floor(x/60)).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`;
+    const taken = ((day*7 + x/30) * 13) % 5 < 2;
+    out.push({time, taken});
+  }
+  return out;
+}
+
+function toast(msg, c){
+  const el = document.createElement('div'); el.className = 'toast'; el.style.setProperty('--c', c || 'var(--leaf)');
+  el.innerHTML = `<i></i><span>${esc(msg)}</span>`;
+  $('#toasts').appendChild(el); setTimeout(() => el.remove(), 3800);
+}
+function log(text, c){ state.feed.unshift({text, c, at:Date.now(), fresh:true}); state.feed.length = Math.min(state.feed.length, 30); if (state.view === 'analytics') renderFeed(); }
+
+/* ---------- rail + list ---------- */
+function counts(){ const c = {}; ORDER.forEach(k => c[k] = 0); threads.forEach(t => c[t.status]++); return c; }
+function renderCounts(){
+  const c = counts(); const open = threads.filter(t => t.status !== 'resolved').length;
+  $('#count-open').textContent = open;
+  const items = [['all','All threads',threads.length,null], ...ORDER.map(k => [k, STATUS[k].label, c[k], `var(--s-${k})`])];
+  $('#filters').innerHTML = items.map(([k,l,n,col]) =>
+    `<button class="nav-btn" data-filter="${k}" aria-current="${state.filter===k}"><span class="lbl">${col?`<span class="dot" style="--c:${col}"></span>`:''}${l}</span><span class="count">${n}</span></button>`).join('');
+  $('#filter-select').innerHTML = items.map(([k,l,n]) => `<option value="${k}" ${state.filter===k?'selected':''}>${l} (${n})</option>`).join('');
+  document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-current', b.dataset.view === state.view));
+}
+function visible(){
+  const q = state.q.trim().toLowerCase();
+  return threads.filter(t => (state.filter === 'all' || t.status === state.filter) &&
+      (!q || [t.name,t.company,t.subject,t.intent,t.id,t.messages[t.messages.length-1].body].join(' ').toLowerCase().includes(q)))
+    .sort((a,b) => b.at - a.at);
+}
+function renderList(){
+  const v = visible();
+  $('#list-count').textContent = `${v.length} thread${v.length===1?'':'s'}`;
+  $('#list').innerHTML = v.length ? v.map(t => {
+    const last = t.messages[t.messages.length-1];
+    return `<button class="thread${t.unread?' unread':''}${t.fresh?' fresh':''}" data-id="${t.id}" aria-current="${t.id===state.sel}">
+      <span class="av" aria-hidden="true">${initials(t.name)}</span>
+      <span class="t-body">
+        <span class="t-row"><span class="t-name">${esc(t.name)}</span><span class="t-time">${ago(t.at)}</span></span>
+        <span class="t-subj">${esc(t.subject)}</span>
+        <span class="t-prev">${esc(last.body.replace(/\s+/g,' '))}</span>
+        <span class="t-tags">${badge(t.status, t.drafting)}<span class="tag">${esc(t.intent)}</span>${t.sentiment==='Frustrated'?'<span class="tag warn">Frustrated</span>':''}</span>
+      </span></button>`;
+  }).join('') : `<div class="list-empty">No threads match. Clear the search or pick another workflow.</div>`;
+  threads.forEach(t => t.fresh = false);
+}
+
+/* ---------- thread detail ---------- */
+function msgHtml(x){
+  return `<li class="msg ${x.from}"><div class="msg-h"><b>${esc(x.name)}</b><span>${stamp(x.at)}</span></div><p>${esc(x.body)}</p>${x.attach?`<span class="attach">📎 ${esc(x.attach)}</span>`:''}</li>`;
+}
+function draftHtml(t){
+  if (t.drafting) return `<div class="draft"><div class="draft-h"><h3><span class="glyph">✦</span>AI reply preview</h3>${badge('new',true)}</div>
+    <div class="skeleton" aria-label="Drafting a reply"><span style="width:38%"></span><span></span><span style="width:92%"></span><span style="width:70%"></span></div></div>`;
+  if (t.draftState === 'sent') return `<div class="draft"><div class="draft-state"><span>Reply sent. A new draft appears when ${esc(first(t.name))} answers.</span><button class="btn" data-act="redraft">Draft a follow-up</button></div></div>`;
+  if (t.draftState === 'discarded') return `<div class="draft"><div class="draft-state"><span>Draft discarded. Write your own reply, or ask for a new draft.</span><button class="btn" data-act="redraft">Draft again</button></div></div>`;
+  const tones = ['friendly','concise','formal'];
+  return `<div class="draft">
+    <div class="draft-h">
+      <h3><span class="glyph">✦</span>AI reply preview</h3>
+      <div class="conf" style="--c:${confColor(t.conf)}"><span>Confidence <b class="num" style="color:var(--text)">${t.conf}%</b></span><span class="meter"><span style="width:${t.conf}%"></span></span><span>${confLabel(t.conf)}</span></div>
+    </div>
+    <div class="draft-b">
+      ${t.review ? `<div class="why"><b>Held for review.</b> ${esc(t.review)}</div>` : ''}
+      <div class="tones" role="group" aria-label="Tone"><span class="lbl">Tone</span>${tones.map(x => `<button class="tone" data-tone="${x}" aria-pressed="${t.tone===x}">${x[0].toUpperCase()+x.slice(1)}</button>`).join('')}</div>
+      <textarea id="draft-text" aria-label="Reply draft" spellcheck="true"></textarea>
+      <div class="sources"><span>Grounded in</span>${t.sources.map(s => `<span class="tag">${esc(s)}</span>`).join('')}</div>
+    </div>
+    <div class="draft-f">
+      <span class="note">Edits you make train future drafts for ${esc(t.intent.toLowerCase())} emails.</span>
+      <span class="acts">
+        <button class="btn btn-quiet" data-act="discard">Discard</button>
+        <button class="btn" data-act="regen">Regenerate</button>
+        <button class="btn btn-primary" data-act="send">Approve &amp; send</button>
+      </span>
+    </div></div>`;
+}
+function customerHtml(t){
+  return `<div class="card">
+    <div class="cust"><span class="av" aria-hidden="true">${initials(t.name)}</span><div><b>${esc(t.name)}</b><span>${esc(t.email)}</span></div></div>
+    <dl class="kv">
+      <dt>Company</dt><dd>${esc(t.company)}</dd>
+      <dt>Plan</dt><dd>${esc(t.plan)} · ${esc(t.mrr)}</dd>
+      <dt>Customer since</dt><dd>${esc(t.since)}</dd>
+      <dt>Past threads</dt><dd class="num">${t.tickets}</dd>
+      <dt>Sentiment</dt><dd><span class="tag ${t.sentiment==='Frustrated'?'warn':t.sentiment==='Positive'?'good':''}">${esc(t.sentiment)}</span></dd>
+    </dl></div>`;
+}
+function schedHtml(t){
+  if (t.meeting) {
+    const d = DAYS[t.meeting.day];
+    return `<div class="card" id="sched"><h3>Meeting <small>via Calendly</small></h3>
+      <div class="booked"><b>Booked · ${esc(t.meeting.type)}</b><span>${fmtDay(d)}, ${slotLabel(t.meeting.time)} · ${t.meeting.mins} min</span><code>${esc(t.meeting.link || calLink(EVENT_TYPES.find(e=>e.name===t.meeting.type)||EVENT_TYPES[1], t.meeting.day, t.meeting.time))}</code></div>
+      <button class="btn" data-act="reschedule">Reschedule</button></div>`;
+  }
+  const s = t.sched; const type = EVENT_TYPES.find(e => e.id === s.type);
+  const slots = slotsFor(s.day, type.mins);
+  const pending = t.pendingMeeting;
+  return `<div class="card" id="sched">
+    <h3>Book a meeting <small>via Calendly</small></h3>
+    <div class="etypes" role="group" aria-label="Event type">${EVENT_TYPES.map(e => `<button class="etype" data-etype="${e.id}" aria-pressed="${e.id===s.type}"><span>${e.name}</span><small>${e.mins} min</small></button>`).join('')}</div>
+    <div class="days" role="group" aria-label="Day">${DAYS.map((d,i) => `<button class="day" data-day="${i}" aria-pressed="${i===s.day}">${d.toLocaleDateString('en-US',{weekday:'short'})}<b>${d.getDate()}</b></button>`).join('')}</div>
+    <div class="slots" role="group" aria-label="Available times">${slots.map(x => `<button class="slot" data-slot="${x.time}" ${x.taken?'disabled aria-label="'+slotLabel(x.time)+' taken"':''} aria-pressed="${x.time===s.slot}">${slotLabel(x.time)}</button>`).join('')}</div>
+    <div class="tz">Times in ${esc(TZ.replace(/_/g,' '))} · crossed-out times are already booked</div>
+    ${pending ? `<div class="booked"><b>Held · ${esc(pending.type)}</b><span>${esc(pending.label)}. Confirmed when you send the reply.</span><code>${esc(pending.link)}</code></div>` : ''}
+    <button class="btn" data-act="addslot" ${s.slot && !t.drafting && !t.draftState ? '' : 'disabled'}>${pending ? 'Update time in reply' : 'Add time to reply'}</button>
+  </div>`;
+}
+function renderDetail(){
+  const d = $('#detail'); const t = cur();
+  if (!t) { d.innerHTML = `<div class="empty"><div><b>Pick a thread</b>AI drafts, customer details and meeting times show up here.</div></div>`; return; }
+  d.innerHTML = `
+    <div class="d-head">
+      <button class="btn back" data-act="back">← All threads</button>
+      <div class="d-title"><h2>${esc(t.subject)}</h2>
+        <div class="d-meta">${badge(t.status, t.drafting)}<span class="tag">${esc(t.intent)}</span><span class="mono">${t.id}</span></div></div>
+      <div class="d-actions">
+        ${t.status!=='escalated' && t.status!=='resolved' ? '<button class="btn" data-act="escalate">Escalate</button>' : ''}
+        <button class="btn" data-act="resolve">${t.status==='resolved'?'Reopen':'Mark resolved'}</button>
+      </div>
+    </div>
+    <div class="d-grid">
+      <div class="d-main"><ol class="msgs">${t.messages.map(msgHtml).join('')}</ol><div id="draft-wrap">${draftHtml(t)}</div></div>
+      <aside class="d-side">${customerHtml(t)}${schedHtml(t)}</aside>
+    </div>`;
+  bindDraft(t);
+}
+function bindDraft(t){
+  const ta = $('#draft-text'); if (!ta) return;
+  ta.value = t.draftText ?? withMeeting(t.drafts[t.tone], t.pendingMeeting);
+  ta.addEventListener('input', () => { t.draftText = ta.value; t.edited = true; });
+}
+function renderDraft(){ const t = cur(); if (!t) return; $('#draft-wrap').innerHTML = draftHtml(t); bindDraft(t); }
+function renderSched(){ const t = cur(); const el = $('#sched'); if (t && el) el.outerHTML = schedHtml(t); }
+
+function withMeeting(text, mt){
+  if (!mt) return text;
+  const para = `I've held ${mt.label} (${mt.mins} min) for us. Confirm it or pick another time here: ${mt.link}`;
+  const clean = text.replace(/\n\nI've held [^\n]*/,'');
+  const i = clean.lastIndexOf(SIG);
+  return i >= 0 ? clean.slice(0,i) + '\n\n' + para + clean.slice(i) : clean + '\n\n' + para;
+}
+let streamTimer;
+function stream(text){
+  const ta = $('#draft-text'); if (!ta) return;
+  clearInterval(streamTimer);
+  if (reduce) { ta.value = text; return; }
+  let i = 0; ta.value = ''; ta.classList.add('streaming');
+  streamTimer = setInterval(() => {
+    i = Math.min(text.length, i + 5); ta.value = text.slice(0, i);
+    if (i >= text.length) { clearInterval(streamTimer); ta.classList.remove('streaming'); }
+  }, 12);
+}
+
+/* ---------- actions ---------- */
+function select(id){
+  state.sel = id; const t = cur(); if (t) t.unread = false;
+  renderList(); renderDetail();
+  $('#view-inbox').classList.add('show-detail');
+  $('#detail').scrollTop = 0;
+  if (matchMedia('(max-width:860px)').matches) window.scrollTo({top:0});
+}
+function setStatus(t, s){ t.status = s; renderCounts(); renderList(); }
+
+$('#list').addEventListener('click', e => { const b = e.target.closest('[data-id]'); if (b) select(b.dataset.id); });
+$('#filters').addEventListener('click', e => { const b = e.target.closest('[data-filter]'); if (!b) return; state.filter = b.dataset.filter; if (state.view !== 'inbox') setView('inbox'); renderCounts(); renderList(); });
+$('#filter-select').addEventListener('change', e => { state.filter = e.target.value; renderCounts(); renderList(); });
+$('#q').addEventListener('input', e => { state.q = e.target.value; if (state.view !== 'inbox') setView('inbox'); renderList(); });
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+
+$('#detail').addEventListener('click', e => {
+  const t = cur(); if (!t) return;
+  const tone = e.target.closest('[data-tone]');
+  if (tone) {
+    t.tone = tone.dataset.tone; t.draftText = null; t.edited = false;
+    document.querySelectorAll('[data-tone]').forEach(b => b.setAttribute('aria-pressed', b === tone));
+    stream(withMeeting(t.drafts[t.tone], t.pendingMeeting)); return;
+  }
+  const et = e.target.closest('[data-etype]'); if (et) { t.sched.type = et.dataset.etype; t.sched.slot = null; renderSched(); return; }
+  const dy = e.target.closest('[data-day]'); if (dy) { t.sched.day = +dy.dataset.day; t.sched.slot = null; renderSched(); return; }
+  const sl = e.target.closest('[data-slot]'); if (sl && !sl.disabled) { t.sched.slot = sl.dataset.slot; renderSched(); return; }
+  const act = e.target.closest('[data-act]'); if (!act) return;
+  const a = act.dataset.act;
+  if (a === 'back') { $('#view-inbox').classList.remove('show-detail'); state.sel = null; renderList(); return; }
+  if (a === 'regen') {
+    t.draftText = null; t.edited = false;
+    t.conf = Math.max(55, Math.min(99, t.conf + Math.round(Math.random()*4 - 1)));
+    renderDraft(); stream(withMeeting(t.drafts[t.tone], t.pendingMeeting)); return;
+  }
+  if (a === 'discard') { clearInterval(streamTimer); t.draftState = 'discarded'; t.draftText = null; state.out.discarded++; renderDraft(); renderSched(); log(`Draft discarded for ${t.name}`, 'var(--s-escalated)'); return; }
+  if (a === 'redraft') { t.draftState = null; t.draftText = null; t.edited = false; renderDraft(); renderSched(); stream(withMeeting(t.drafts[t.tone], t.pendingMeeting)); return; }
+  if (a === 'send') {
+    clearInterval(streamTimer);
+    const body = $('#draft-text').value.trim(); if (!body) { toast('The reply is empty. Write something or regenerate the draft.', 'var(--danger)'); return; }
+    t.messages.push({from:'agent', name:'You', at:Date.now(), body});
+    t.at = Date.now(); t.edited ? state.out.edited++ : state.out.asis++;
+    if (t.pendingMeeting) {
+      const p = t.pendingMeeting; t.meeting = {type:p.type, mins:p.mins, day:p.day, time:p.time, link:p.link}; t.pendingMeeting = null;
+      state.bookedToday++; setStatus(t, 'scheduled');
+      log(`Meeting booked with ${t.name} · ${p.label}`, 'var(--s-scheduled)');
+    } else setStatus(t, 'waiting');
+    t.draftState = 'sent'; t.draftText = null; t.review = null;
+    log(`Reply sent to ${t.name}${t.edited ? ' (edited)' : ' (AI draft as-is)'}`, 'var(--s-drafted)');
+    t.edited = false;
+    renderDetail(); toast(`Reply sent to ${t.name}`); return;
+  }
+  if (a === 'addslot') {
+    const type = EVENT_TYPES.find(x => x.id === t.sched.type);
+    const label = `${fmtDay(DAYS[t.sched.day])} at ${slotLabel(t.sched.slot)}`;
+    t.pendingMeeting = {type:type.name, mins:type.mins, day:t.sched.day, time:t.sched.slot, label, link:calLink(type, t.sched.day, t.sched.slot)};
+    const ta = $('#draft-text');
+    if (ta) { ta.value = withMeeting(ta.value, t.pendingMeeting); if (t.draftText != null) t.draftText = ta.value; }
+    renderSched(); toast(`${label} added to the reply`, 'var(--s-scheduled)'); return;
+  }
+  if (a === 'reschedule') { t.meeting = null; t.sched = {type:t.meetType, day:0, slot:null}; setStatus(t, 'drafted'); renderDetail(); return; }
+  if (a === 'escalate') { setStatus(t, 'escalated'); renderDetail(); log(`${t.id} escalated to tier 2`, 'var(--s-escalated)'); toast(`${t.id} escalated to tier 2`, 'var(--s-escalated)'); return; }
+  if (a === 'resolve') {
+    const reopen = t.status === 'resolved';
+    setStatus(t, reopen ? 'drafted' : 'resolved'); renderDetail();
+    log(reopen ? `${t.id} reopened` : `${t.id} resolved`, reopen ? 'var(--s-new)' : 'var(--s-resolved)');
+    toast(reopen ? `${t.id} reopened` : `${t.id} marked resolved`); return;
+  }
+});
+
+/* ---------- views ---------- */
+function setView(v){
+  state.view = v;
+  $('#view-inbox').hidden = v !== 'inbox';
+  $('#view-analytics').hidden = v !== 'analytics';
+  $('#view-title').textContent = v === 'inbox' ? 'Inbox' : 'Analytics';
+  try { history.replaceState(null, '', '#' + v); } catch (e) {}
+  renderCounts();
+  if (v === 'analytics') renderAnalytics();
+}
+
+/* ---------- analytics ---------- */
+function spark(vals, color){
+  const w = 160, h = 30, mx = Math.max(...vals), mn = Math.min(...vals), r = (mx - mn) || 1;
+  const pts = vals.map((v,i) => [i*(w/(vals.length-1)), h - 3 - ((v-mn)/r)*(h-6)]);
+  const d = pts.map((p,i) => (i?'L':'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const last = pts[pts.length-1];
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d} L${w} ${h} L0 ${h} Z" fill="${color}" fill-opacity=".12" stroke="none"/><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="${last[0]-2}" cy="${last[1]}" r="2.6" fill="${color}"/></svg>`;
+}
+function fmtDur(s){ return `${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; }
+function renderKpis(){
+  const c = counts(); const open = threads.length - c.resolved;
+  const frt = state.frt[state.frt.length-1], frtPrev = state.frt[state.frt.length-7];
+  const o = state.out, total = o.asis + o.edited + o.discarded;
+  const accept = Math.round((o.asis + o.edited) / total * 100);
+  const sum = a => a.reduce((x,y) => x+y, 0);
+  const inc = sum(state.series.inc), res = sum(state.series.res);
+  const tiles = [
+    {l:'Open threads', v:open, d:`${c.drafted + c.review} with an AI draft ready`, sp:null},
+    {l:'Incoming · 2h', v:inc, d:`${res} resolved in the same window`, sp:spark(state.series.inc,'var(--s-new)')},
+    {l:'First response', v:fmtDur(frt), d:`<span class="${frt<=frtPrev?'up':'down'}">${frt<=frtPrev?'▼':'▲'} ${fmtDur(Math.abs(frt-frtPrev))}</span> vs 30 min ago`, sp:spark(state.frt,'var(--s-waiting)')},
+    {l:'AI auto-resolved', v:state.aiRate.toFixed(1)+'<small>%</small>', d:'sent without edits, no reply needed', sp:null},
+    {l:'Draft acceptance', v:accept+'<small>%</small>', d:`${o.asis + o.edited} of ${total} drafts sent`, sp:null},
+    {l:'Meetings booked', v:state.bookedToday, d:'today, via Calendly', sp:null},
+  ];
+  $('#kpis').innerHTML = tiles.map(k => `<div class="kpi"><span class="k-l">${k.l}</span><span class="k-v">${k.v}</span><span class="k-d">${k.d}</span>${k.sp||''}</div>`).join('');
+}
+function renderChart(){
+  const box = $('#chart'); const W = Math.max(280, box.clientWidth || 600), H = box.clientHeight || 240;
+  const P = {l:30, r:34, t:12, b:24};
+  const {inc, res} = state.series; const n = inc.length;
+  const mx = Math.max(...inc, ...res); const top = Math.ceil(mx / 5) * 5 || 5;
+  const x = i => P.l + i * (W - P.l - P.r) / (n - 1);
+  const y = v => P.t + (1 - v/top) * (H - P.t - P.b);
+  const path = a => a.map((v,i) => (i?'L':'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = top*k/4; g += `<line class="grid" x1="${P.l}" x2="${W-P.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${P.l-8}" y="${y(v)+4}" text-anchor="end">${Number.isInteger(v)?v:v.toFixed(1)}</text>`; }
+  const xl = [[5,'−90m'],[11,'−60m'],[17,'−30m'],[23,'Now']];
+  xl.forEach(([i,l]) => g += `<text x="${x(i)}" y="${H-6}" text-anchor="${i===n-1?'end':'middle'}">${l}</text>`);
+  const ei = n - 1;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Incoming and resolved emails per 5 minutes over the last 2 hours. Latest: ${inc[ei]} incoming, ${res[ei]} resolved.">${g}
+    <path class="ar in" d="${path(inc)} L${x(ei)} ${y(0)} L${x(0)} ${y(0)} Z"/>
+    <path class="ln in" d="${path(inc)}"/><path class="ln res" d="${path(res)}"/>
+    <circle class="end in" cx="${x(ei)}" cy="${y(inc[ei])}" r="4"/><circle class="end res" cx="${x(ei)}" cy="${y(res[ei])}" r="4"/>
+    <text class="end-lbl" x="${x(ei)+8}" y="${y(inc[ei])+(inc[ei]>=res[ei]?-2:10)}">${inc[ei]}</text>
+    <text class="end-lbl" x="${x(ei)+8}" y="${y(res[ei])+(res[ei]>inc[ei]?-2:10)}">${res[ei]}</text></svg>`;
+}
+function bars(rows){
+  const mx = Math.max(1, ...rows.map(r => r[1]));
+  return rows.map(([name, v, col]) => `<div class="bar"><span class="name">${esc(name)}</span><span class="track"><span class="fill" style="width:${(v/mx*100).toFixed(1)}%;--c:${col}"></span></span><span class="v">${v}</span></div>`).join('');
+}
+function renderFeed(){
+  $('#feed-count').textContent = `${state.feed.length} events`;
+  $('#feed').innerHTML = state.feed.length ? state.feed.slice(0, 14).map(f => `<li class="${f.fresh?'fresh':''}"><i style="--c:${f.c}"></i><span>${esc(f.text)}</span><time>${ago(f.at)}</time></li>`).join('') : '<li><i style="--c:var(--line)"></i><span class="muted">Waiting for activity</span><time></time></li>';
+  state.feed.forEach(f => f.fresh = false);
+}
+function renderAnalytics(){
+  renderKpis(); renderChart(); renderFeed();
+  const c = counts();
+  $('#pipe').innerHTML = bars(ORDER.filter(k => k !== 'resolved').map(k => [STATUS[k].label, c[k], `var(--s-${k})`]));
+  const intents = {...BASE_INTENTS}; threads.forEach(t => intents[t.intent] = (intents[t.intent]||0) + 1);
+  $('#intents').innerHTML = bars(Object.entries(intents).sort((a,b) => b[1]-a[1]).slice(0,6).map(([k,v]) => [k, v, 'var(--s-new)']));
+  const o = state.out, tot = o.asis + o.edited + o.discarded;
+  const rows = [['Sent as drafted', o.asis, 'var(--s-drafted)'], ['Edited, then sent', o.edited, 'var(--s-waiting)'], ['Discarded', o.discarded, 'var(--s-escalated)']];
+  $('#outcomes').innerHTML = `<div class="stack" role="img" aria-label="${rows.map(r => `${r[0]} ${r[1]}`).join(', ')}">${rows.map(r => `<span style="flex-grow:${r[1]};--c:${r[2]}"></span>`).join('')}</div>
+    <div class="stack-legend">${rows.map(r => `<div><span><i style="--c:${r[2]}"></i>${r[0]}</span><b class="num">${r[1]} <span class="muted" style="font-weight:400">· ${Math.round(r[1]/tot*100)}%</span></b></div>`).join('')}</div>`;
+}
+if ('ResizeObserver' in window) new ResizeObserver(() => { if (state.view === 'analytics') renderChart(); }).observe($('#chart'));
+
+/* ---------- live simulation ---------- */
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+function finishDraft(t){
+  t.drafting = false; t.status = 'drafted';
+  log(`AI drafted a reply for ${t.name} · ${t.conf}% confidence`, 'var(--s-drafted)');
+  renderCounts(); renderList();
+  if (state.sel === t.id) { renderDetail(); stream(withMeeting(t.drafts[t.tone], t.pendingMeeting)); }
+}
+function arrive(){
+  const p = POOL.shift(); if (!p) return;
+  const t = {...p, status:'new', drafting:true, unread:true, fresh:true, tone:'friendly', sched:{type:p.meetType, day:0, slot:null},
+    messages:[{from:'customer', name:p.name, at:Date.now(), body:p.body}],
+    drafts:{friendly:p.draft+SIG, concise:p.draft.split('\n\n').slice(0,2).join('\n\n')+SIG, formal:p.draft.replace(/^Hi /,'Dear ')+SIG}};
+  t.at = Date.now(); threads.push(t);
+  log(`New email from ${t.name} · ${t.intent}`, 'var(--s-new)');
+  toast(`New email from ${t.name}: ${t.subject}`, 'var(--s-new)');
+  renderCounts(); renderList();
+  setTimeout(() => finishDraft(t), 3200);
+}
+function tick(){
+  const {inc, res} = state.series;
+  const ni = clamp(inc[inc.length-1] + Math.round(Math.random()*6 - 3), 4, 24);
+  const nr = clamp(ni + Math.round(Math.random()*5 - 3), 2, 24);
+  inc.push(ni); res.push(nr); inc.shift(); res.shift();
+  state.frt.push(clamp(state.frt[state.frt.length-1] + Math.round(Math.random()*30 - 16), 170, 340)); state.frt.shift();
+  state.aiRate = clamp(state.aiRate + (Math.random() - .5) * .6, 34, 44);
+  state.lastTick = Date.now();
+  if (Math.random() < .35) {
+    const evts = [['AI auto-resolved a password reset request','var(--s-drafted)'],['Customer replied on CS-4788','var(--s-new)'],['AI auto-resolved an invoice copy request','var(--s-drafted)'],['Workflow rule tagged a thread as Billing','var(--s-waiting)']];
+    const e = evts[Math.floor(Math.random()*evts.length)]; log(e[0], e[1]);
+  }
+  if (state.view === 'analytics') renderAnalytics();
+}
+setInterval(tick, 4000);
+setInterval(() => {
+  const s = Math.round((Date.now() - state.lastTick)/1000);
+  $('#updated').textContent = `Live · updated ${s < 2 ? 'just now' : s + 's ago'}`;
+}, 1000);
+setInterval(() => { if (state.view === 'inbox') document.querySelectorAll('.thread .t-time').forEach(el => { const t = threads.find(x => x.id === el.closest('.thread').dataset.id); if (t) el.textContent = ago(t.at); }); }, 30000);
+setTimeout(arrive, 14000); setTimeout(arrive, 38000); setTimeout(arrive, 70000);
+
+/* ---------- boot ---------- */
+[['Calendly synced 3 event types','var(--s-scheduled)', 6],['Reply sent to Aiko Tanaka (AI draft as-is)','var(--s-drafted)', 4],['AI drafted a reply for Lucas Ferreira · 97% confidence','var(--s-drafted)', 3],['New email from Marta Silva · Billing','var(--s-new)', 2],['Refund draft held for review · CS-4817','var(--s-review)', 1]]
+  .forEach(([text,c,mm]) => state.feed.unshift({text, c, at:Date.now() - mm*MIN}));
+state.sel = 'CS-4817';
+const v0 = (location.hash || '').slice(1);
+setView(v0 === 'analytics' ? 'analytics' : 'inbox');
+renderList(); renderDetail();
+if (matchMedia('(max-width:860px)').matches) $('#view-inbox').classList.remove('show-detail'); else $('#view-inbox').classList.add('show-detail');
+setTimeout(() => finishDraft(threads[0]), 4500);
+})();
+</script>
