@@ -131,6 +131,19 @@ CREATE TABLE IF NOT EXISTS agente.action_log (
 );
 CREATE INDEX IF NOT EXISTS action_log_entity_idx ON agente.action_log (entity_type, entity_id, at);
 
+-- Área de psiquiatria e risco (mesmo conteúdo de db/migracoes/001_psiquiatria.sql).
+ALTER TABLE agente.conversations ADD COLUMN IF NOT EXISTS area text NOT NULL DEFAULT 'geral';
+ALTER TABLE agente.conversations ADD COLUMN IF NOT EXISTS risk_level text NOT NULL DEFAULT 'nenhum';
+ALTER TABLE agente.conversations ADD COLUMN IF NOT EXISTS risk_flagged_at timestamptz;
+ALTER TABLE agente.conversations DROP CONSTRAINT IF EXISTS conversations_area_check;
+ALTER TABLE agente.conversations ADD CONSTRAINT conversations_area_check CHECK (area IN ('geral','psiquiatria'));
+ALTER TABLE agente.conversations DROP CONSTRAINT IF EXISTS conversations_risk_level_check;
+ALTER TABLE agente.conversations ADD CONSTRAINT conversations_risk_level_check CHECK (risk_level IN ('nenhum','possivel','alto'));
+ALTER TABLE agente.outbound_emails DROP CONSTRAINT IF EXISTS outbound_emails_kind_check;
+ALTER TABLE agente.outbound_emails ADD CONSTRAINT outbound_emails_kind_check
+  CHECK (kind IN ('resposta','confirmacao_encaminhamento','encaminhamento','alerta','alerta_risco','resposta_risco'));
+ALTER TABLE agente.messages ADD COLUMN IF NOT EXISTS anonymized_at timestamptz;
+
 -- ---------------------------------------------------------------- funções
 
 CREATE OR REPLACE FUNCTION agente.log(p jsonb) RETURNS void LANGUAGE sql AS $$
@@ -197,7 +210,8 @@ BEGIN
   v_contact := v_conv.contact_id;
   RETURN jsonb_build_object(
     'conversation', jsonb_build_object('id', v_conv.id, 'status', v_conv.status, 'summary', v_conv.summary,
-                                       'next_action', v_conv.next_action, 'last_intent', v_conv.last_intent),
+                                       'next_action', v_conv.next_action, 'last_intent', v_conv.last_intent,
+                                       'area', v_conv.area, 'risk_level', v_conv.risk_level),
     'history', coalesce((SELECT jsonb_agg(h ORDER BY h.at) FROM (
         SELECT to_char(coalesce(m.received_at, m.created_at) AT TIME ZONE v_tz, 'YYYY-MM-DD HH24:MI') AS at,
                m.direction, m.from_email, left(m.body_text, 2000) AS body
@@ -206,7 +220,7 @@ BEGIN
           AND (m.direction = 'out' OR m.status <> 'ignorada')
         ORDER BY coalesce(m.received_at, m.created_at) DESC LIMIT 10) h), '[]'::jsonb),
     'bookings', coalesce((SELECT jsonb_agg(jsonb_build_object(
-        'id', b.id, 'event_name', b.event_name, 'status', b.status, 'start_time', b.start_time, 'end_time', b.end_time,
+        'id', b.id, 'event_name', b.event_name, 'event_type_uri', b.event_type_uri, 'status', b.status, 'start_time', b.start_time, 'end_time', b.end_time,
         'start_local', to_char(b.start_time AT TIME ZONE coalesce(b.timezone, v_tz), 'DD/MM/YYYY HH24:MI'),
         'end_local', to_char(b.end_time AT TIME ZONE coalesce(b.timezone, v_tz), 'DD/MM/YYYY HH24:MI'),
         'timezone', coalesce(b.timezone, v_tz), 'verified', b.verified_at IS NOT NULL,
@@ -214,6 +228,9 @@ BEGIN
       FROM agente.bookings b WHERE b.contact_id = v_contact AND b.start_time > now() - interval '30 days'), '[]'::jsonb),
     'auto_replies_thread_24h', (SELECT count(*) FROM agente.outbound_emails o
         WHERE o.conversation_id = v_conv.id AND o.kind IN ('resposta','confirmacao_encaminhamento')
+          AND o.status = 'enviado' AND o.sent_at > now() - interval '24 hours'),
+    'risk_replies_thread_24h', (SELECT count(*) FROM agente.outbound_emails o
+        WHERE o.conversation_id = v_conv.id AND o.kind = 'resposta_risco'
           AND o.status = 'enviado' AND o.sent_at > now() - interval '24 hours'),
     'auto_replies_sender_24h', (SELECT count(*) FROM agente.outbound_emails o
         JOIN agente.conversations c ON c.id = o.conversation_id
@@ -234,6 +251,13 @@ BEGIN
       summary = coalesce(nullif(p->'conversation'->>'summary',''), summary),
       next_action = coalesce(nullif(p->'conversation'->>'next_action',''), next_action),
       last_intent = coalesce(p->'conversation'->>'last_intent', last_intent),
+      -- Uma vez psiquiatria, sempre psiquiatria; o nível de risco só sobe.
+      area = CASE WHEN area = 'psiquiatria' THEN area ELSE coalesce(p->'conversation'->>'area', area) END,
+      risk_level = CASE
+        WHEN coalesce(p->'conversation'->>'risk_level', 'nenhum') = 'alto' THEN 'alto'
+        WHEN coalesce(p->'conversation'->>'risk_level', 'nenhum') = 'possivel' AND risk_level = 'nenhum' THEN 'possivel'
+        ELSE risk_level END,
+      risk_flagged_at = CASE WHEN coalesce(p->'conversation'->>'risk_level', 'nenhum') <> 'nenhum' THEN now() ELSE risk_flagged_at END,
       updated_at = now()
     WHERE id = v_msg.conversation_id;
   END IF;
@@ -390,3 +414,23 @@ CREATE OR REPLACE FUNCTION agente.list_pending_outbound(p jsonb DEFAULT '{}'::js
     'rfc822_message_id', rfc822_message_id, 'attempts', attempts)
   FROM agente.outbound_emails WHERE status = 'desconhecido' ORDER BY created_at LIMIT 50;
 $$;
+
+-- Retenção (LGPD): anonimiza o corpo das mensagens antigas da área de psiquiatria. Desligada quando dias é nulo.
+CREATE OR REPLACE FUNCTION agente.anonymize_old(p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE v_days int := nullif(p->>'dias', '')::int; v_n int := 0; v_o int := 0;
+BEGIN
+  IF v_days IS NULL OR v_days < 1 THEN RETURN jsonb_build_object('ativo', false); END IF;
+  UPDATE agente.messages m SET body_text = '[removido]', anonymized_at = now(), updated_at = now()
+  FROM agente.conversations c
+  WHERE c.id = m.conversation_id AND c.area = 'psiquiatria' AND m.anonymized_at IS NULL
+    AND m.status NOT IN ('pendente','processando','falhou') AND m.created_at < now() - make_interval(days => v_days);
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  UPDATE agente.outbound_emails o SET body_text = '[removido]', updated_at = now()
+  FROM agente.conversations c
+  WHERE c.id = o.conversation_id AND c.area = 'psiquiatria' AND o.body_text <> '[removido]'
+    AND o.status IN ('enviado','falhou','descartado') AND o.created_at < now() - make_interval(days => v_days);
+  GET DIAGNOSTICS v_o = ROW_COUNT;
+  PERFORM agente.log(jsonb_build_object('workflow', 'reconciliacao', 'entity_type', 'retencao', 'action', 'anonimizar', 'status', 'ok',
+    'detail', jsonb_build_object('dias', v_days, 'mensagens', v_n, 'envios', v_o)));
+  RETURN jsonb_build_object('ativo', true, 'mensagens', v_n, 'envios', v_o);
+END $$;
