@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: whatsapp-cefaleia-primeira-pessoa
+expected_outcome: |
+  QD in the patient words with duration; 3rd-person narrative HPMA; dipyrone 1 g kept exact; allergy recorded as sulfa (not dipyrone) with rash; history of migraine; oral contraceptive Yaz; to-confirm list with headache red flags not covered (sudden onset, neuro deficit, neck stiffness etc.); no diagnosis.
