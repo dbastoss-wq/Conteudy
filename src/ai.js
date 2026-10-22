@@ -2,13 +2,17 @@
 // Monta a requisição para a Claude Messages API e interpreta a resposta estruturada.
 // O template do prompt de sistema é injetado em SYSTEM_PROMPT_TEMPLATE pelo build (prompts/system-prompt.md).
 
-const INTENTS = ['informacao', 'agendamento', 'reagendamento', 'cancelamento', 'status_agendamento', 'reclamacao', 'outro', 'spam_ou_automatico'];
+const INTENTS = ['informacao', 'agendamento', 'reagendamento', 'cancelamento', 'status_agendamento', 'reclamacao', 'outro', 'spam_ou_automatico',
+  'crise_ou_risco', 'violencia_ou_risco_terceiros', 'urgencia_medica', 'pedido_receita_ou_documento', 'duvida_clinica', 'duvida_teleconsulta'];
+const RISK_LEVELS = ['nenhum', 'possivel', 'alto'];
+const AREAS = ['geral', 'psiquiatria'];
 const ACTIONS = ['responder', 'perguntar', 'enviar_link_agendamento', 'encaminhar_responsavel', 'nao_responder'];
 
 const DECISION_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['intent', 'action', 'meeting_type_key', 'reply_body', 'escalation_reason', 'missing_info', 'summary', 'next_action', 'kb_grounded', 'confidence'],
+  required: ['intent', 'action', 'meeting_type_key', 'reply_body', 'escalation_reason', 'missing_info', 'summary', 'next_action', 'kb_grounded', 'confidence',
+    'risk_level', 'area', 'menor_de_idade', 'fora_do_brasil'],
   properties: {
     intent: { type: 'string', enum: INTENTS },
     action: { type: 'string', enum: ACTIONS },
@@ -20,6 +24,10 @@ const DECISION_SCHEMA = {
     next_action: { type: 'string' },
     kb_grounded: { type: 'boolean' },
     confidence: { type: 'number', description: 'Confiança de 0 a 1 na decisão.' },
+    risk_level: { type: 'string', enum: RISK_LEVELS, description: 'Sinal de risco (crise, autolesão, risco a terceiros, urgência).' },
+    area: { type: 'string', enum: AREAS },
+    menor_de_idade: { type: 'boolean', description: 'A mensagem indica que o paciente é menor de 18 anos.' },
+    fora_do_brasil: { type: 'boolean', description: 'A mensagem indica que o paciente está fora do Brasil.' },
   },
 };
 
@@ -31,11 +39,15 @@ function fill(template, vars) {
 }
 
 function describeMeetingTypes(types) {
-  return (types || []).map(t => `- ${t.key}: ${t.name} — ${t.duration_min} min — ${t.purpose}`).join('\n') || '- (nenhum tipo configurado)';
+  return (types || []).map(t => `- ${t.key}: ${t.name} — ${t.duration_min} min — ${t.purpose}${t.area ? ` — área: ${t.area}` : ''}`).join('\n') || '- (nenhum tipo configurado)';
 }
 
+// Blocos {{#psiquiatria}}...{{/psiquiatria}} só entram quando psiquiatria.enabled.
 function buildSystemPrompt(template, settings) {
-  return fill(template, {
+  const psiq = !!(settings.psiquiatria && settings.psiquiatria.enabled);
+  const t = String(template).replace(/\{\{#psiquiatria\}\}([\s\S]*?)\{\{\/psiquiatria\}\}/g, (_, inner) => (psiq ? inner : ''));
+  return fill(t, {
+    psiquiatria: settings.psiquiatria || {},
     agent: settings.agent || {},
     company: settings.company || {},
     timezone: settings.timezone || 'America/Sao_Paulo',
@@ -86,7 +98,8 @@ function parseResponse(resp) {
   let d;
   try { d = JSON.parse(text); } catch (e) { return { ok: false, error: 'json_invalido' }; }
   if (!ACTIONS.includes(d.action) || !INTENTS.includes(d.intent)) return { ok: false, error: 'schema_invalido' };
+  if (d.risk_level != null && !RISK_LEVELS.includes(d.risk_level)) return { ok: false, error: 'schema_invalido' };
   return { ok: true, decision: d, usage: resp.usage || null, model: resp.model || null };
 }
 
-module.exports = { buildRequest, buildSystemPrompt, buildUserContent, parseResponse, DECISION_SCHEMA, INTENTS, ACTIONS };
+module.exports = { buildRequest, buildSystemPrompt, buildUserContent, parseResponse, DECISION_SCHEMA, INTENTS, ACTIONS, RISK_LEVELS, AREAS };

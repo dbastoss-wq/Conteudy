@@ -1,6 +1,8 @@
 'use strict';
 // Decide se uma mensagem recebida NÃO deve ser respondida pelo agente.
-// Retorna { skip: boolean, reason: string|null }. Ordem: do motivo mais seguro ao mais específico.
+// Retorna { skip: boolean, reason: string|null, internal?: boolean }. Ordem: do motivo mais seguro ao mais específico.
+// Com sinal de risco (risk=true), só os filtros anti-loop valem (automáticas, listas, bounces, próprio agente);
+// limites anti-ciclo, remetente interno, SPAM/Promoções e conversa com humano não bloqueiam o alerta.
 
 const AUTO_LOCALPART = /^(no-?reply|do-?not-?reply|nao-?responda|mailer-daemon|postmaster|bounces?|notifica(c|ç)(o|õ)es|notifications?|alerts?|daemon)([+.\-_].*)?$/i;
 const AUTO_SUBJECT = /^\s*(automatic reply|auto(matic)?[- ]?reply|resposta autom[aá]tica|out of (the )?office|aus[eê]ncia|fora do escrit[oó]rio|f[eé]rias|delivery status notification|undeliverable|mail delivery failed|returned mail|n[aã]o entregue)/i;
@@ -10,7 +12,7 @@ function domainOf(address) {
   return i >= 0 ? address.slice(i + 1).toLowerCase() : '';
 }
 
-function shouldSkip(msg, settings, ctx) {
+function shouldSkip(msg, settings, ctx, risk) {
   const h = msg.headers || {};
   const from = String(msg.from_email || '').toLowerCase();
   const agent = settings.agent || {};
@@ -21,7 +23,7 @@ function shouldSkip(msg, settings, ctx) {
 
   if (!from) return { skip: true, reason: 'sem_remetente' };
   if (own.includes(from) || h['x-agente-atendimento']) return { skip: true, reason: 'proprio_agente' };
-  if ((msg.label_ids || []).includes('SPAM')) return { skip: true, reason: 'spam' };
+  if (!risk && (msg.label_ids || []).includes('SPAM')) return { skip: true, reason: 'spam' };
   if ((msg.label_ids || []).includes('SENT') || (msg.label_ids || []).includes('DRAFT')) return { skip: true, reason: 'proprio_agente' };
   if (h['auto-submitted'] && !/^\s*no\s*$/i.test(h['auto-submitted'])) return { skip: true, reason: 'automatica' };
   if (h['x-autoreply'] || h['x-autorespond'] || h['x-autoresponder']) return { skip: true, reason: 'automatica' };
@@ -33,9 +35,11 @@ function shouldSkip(msg, settings, ctx) {
   if (AUTO_LOCALPART.test(from.split('@')[0])) return { skip: true, reason: 'remetente_automatico' };
   if (AUTO_SUBJECT.test(msg.subject || '')) return { skip: true, reason: 'automatica' };
   if (ignoreDomains.includes(domainOf(from))) return { skip: true, reason: 'notificacao_de_sistema' };
-  if (internal.includes(from) || internalDomains.includes(domainOf(from))) return { skip: true, reason: 'remetente_interno' };
-  if (settings.skip_promotions !== false && (msg.label_ids || []).includes('CATEGORY_PROMOTIONS')) return { skip: true, reason: 'promocional' };
+  const isInternal = internal.includes(from) || internalDomains.includes(domainOf(from));
   if (!String(msg.body_new_text || msg.body_text || '').trim() && !String(msg.subject || '').trim()) return { skip: true, reason: 'sem_conteudo' };
+  if (risk) return { skip: false, reason: null, internal: isInternal };
+  if (isInternal) return { skip: true, reason: 'remetente_interno' };
+  if (settings.skip_promotions !== false && (msg.label_ids || []).includes('CATEGORY_PROMOTIONS')) return { skip: true, reason: 'promocional' };
 
   if (ctx) {
     // Conversa assumida por pessoa da equipe: o agente apenas registra.
