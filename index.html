@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teleconsulta</title>
+<meta name="description" content="Roteiro e anamnese para teleconsulta, preenchível em tempo real.">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Teleconsulta">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <div class="top-row">
+    <div class="who">
+      <strong id="pNome"></strong>
+      <span id="pIdade"></span>
+      <span class="allergy" id="pAlergia"></span>
+    </div>
+    <div class="timer" role="timer">
+      <span id="tTime" aria-live="off">00:00</span><span class="tmax">/30:00</span>
+      <button id="tToggle" class="btn sm" type="button">Iniciar</button>
+      <button id="tReset" class="btn sm ghost" type="button" aria-label="Zerar cronômetro">↺</button>
+    </div>
+  </div>
+  <div class="top-row sub">
+    <span id="tStage" class="stage">Cronômetro parado</span>
+    <span class="spacer"></span>
+    <span id="saved" class="saved" aria-live="polite">salvo</span>
+    <button id="btnList" class="btn sm ghost" type="button">Consultas</button>
+  </div>
+  <div id="alertAsq" class="alert" hidden role="alert">
+    RISCO AGUDO (ASQ 5 = sim): não encerrar a chamada. Responsável junto, SAMU 192 no endereço confirmado, ficar na linha.
+  </div>
+</header>
+
+<nav id="nav" aria-label="Seções"></nav>
+<main id="main"></main>
+
+<button id="sos" class="sos" type="button" aria-label="Emergência">SOS</button>
+
+<div id="modal" class="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="sheet-head">
+      <h2 id="mTitle"></h2>
+      <button id="mClose" class="btn sm ghost" type="button">Fechar</button>
+    </div>
+    <div id="mBody"></div>
+  </div>
+</div>
+
+<div id="printArea" aria-hidden="true"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="content.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
