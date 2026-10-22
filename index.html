@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* =====================================================================
+   // TROCAR AQUI — dados da clínica. Altere só o texto entre aspas.
+   ===================================================================== */
+const WHATSAPP  = "";                 // só números, com DDI e DDD. Ex.: "5511987654321". Vazio = WhatsApp abre para a pessoa escolher o contato.
+const CRM       = "";                 // Ex.: "CRM-SP 123456". Vazio = exibe "CRM [CONFIRMAR]".
+const RQE       = "";                 // Ex.: "98765". Vazio = exibe "médica com atuação em saúde mental" (sem a palavra Psiquiatra).
+const ENDERECO  = "";                 // Ex.: "Rua Exemplo, 100, sala 12 · Bairro · Cidade/UF". Vazio = exibe "[ENDEREÇO A CONFIRMAR]".
+const INSTAGRAM = "dra.arianecristina";
+const MODO_DEPOIMENTOS = false;       // Mantenha false. A Resolução CFM 2.336/2023 proíbe depoimentos de pacientes,
+                                      // antes e depois e promessa de resultado. A seção 06 exibe reflexões da médica, nunca relatos.
+/* ===================================================================== */
+</script>
+<title>Dra. Ariane Cristina · Saúde mental de mulheres, mães e crianças atípicas</title>
+<meta name="description" content="Dra. Ariane Cristina, médica com atuação em saúde mental de mulheres, mães e crianças atípicas. Acolhimento, ciência e cuidado em cada atendimento. Consultas presenciais e online.">
+<meta name="theme-color" content="#4A342A">
+<link rel="canonical" href="https://dra-arianecristina.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="Dra. Ariane Cristina · Acolhimento, ciência e cuidado">
+<meta property="og:description" content="Saúde mental de mulheres, mães e crianças atípicas. Consultas presenciais e online.">
+<meta property="og:image" content="https://dra-arianecristina.vercel.app/assets/img/og.jpg">
+<meta property="og:url" content="https://dra-arianecristina.vercel.app/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%234A342A'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='Georgia,serif' font-size='34' fill='%23F7F4EF'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="assets/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/jost-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script type="application/ld+json" id="schema">
+{"@context":"https://schema.org","@type":"Physician","name":"Dra. Ariane Cristina","description":"Médica com atuação em saúde mental de mulheres, mães e crianças atípicas.","medicalSpecialty":"Psychiatric","url":"https://dra-arianecristina.vercel.app/","image":"https://dra-arianecristina.vercel.app/assets/img/og.jpg","sameAs":["https://www.instagram.com/dra.arianecristina/"],"telephone":"[CONFIRMAR]","address":{"@type":"PostalAddress","streetAddress":"[CONFIRMAR]","addressLocality":"[CONFIRMAR]","addressRegion":"[CONFIRMAR]","addressCountry":"BR"},"availableService":[{"@type":"MedicalTherapy","name":"Consulta presencial"},{"@type":"MedicalTherapy","name":"Teleconsulta"}]}
+</script>
+<!--
+  CONCEITO CRIATIVO · "A sala de escuta"
+  1. O site é uma sala calma: papel, café, luz de fim de tarde. Nada brilha, tudo acolhe.
+  2. O gesto central é a linha à mão: ela sublinha, aponta, liga passos. É a escuta virando traço.
+  3. Tipografia de revista de arquitetura: serif monumental para o nome, itálico só onde há emoção.
+  4. O borgonha é um batimento: aparece uma vez por dobra, como quem marca o que importa.
+  5. Tudo se move sozinho e devagar, no ritmo de uma respiração. Quem visita não precisa fazer nada para ser cuidado.
+-->
+<style>
+@font-face{font-family:"Playfair Display";src:url(assets/fonts/playfair-display-latin-wght-normal.woff2) format("woff2");font-weight:400 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Playfair Display";src:url(assets/fonts/playfair-display-latin-wght-italic.woff2) format("woff2");font-weight:400 900;font-style:italic;font-display:swap}
+@font-face{font-family:"Jost";src:url(assets/fonts/jost-latin-wght-normal.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+
+:root{
+  --areia:#E8E1D6; --off:#F7F4EF; --linho:#DED4C6; --cafe:#4A342A; --cafe-2:#3A2820;
+  --marrom:#8A6A57; --marrom-ink:#76574A; --borgonha:#B5125B;
+  --ease:cubic-bezier(.22,1,.36,1); --t:.8s;
+  --serif:"Playfair Display","Bodoni Moda",Georgia,"Times New Roman",serif;
+  --sans:"Jost","Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --gutter:clamp(1.25rem,5vw,4.5rem); --max:1320px;
+  --nav-h:84px;
+  --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .29 0 0 0 0 .2 0 0 0 0 .16 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --paper:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.01 .05' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .54 0 0 0 0 .42 0 0 0 0 .34 0 0 0 .12 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;overflow-x:clip;scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--off) var(--paper);color:var(--cafe);font-family:var(--sans);font-size:clamp(1rem,.96rem + .2vw,1.125rem);line-height:1.7;letter-spacing:.012em;overflow-x:clip;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body::after{content:"";position:fixed;inset:0;background:var(--noise);opacity:.07;pointer-events:none;z-index:90}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+button,input,select{font:inherit;color:inherit}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:400;line-height:1.08;letter-spacing:-.01em;margin:0}
+p{margin:0 0 1em}
+em,.emo{font-style:italic}
+::selection{background:var(--cafe);color:var(--off)}
+:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:4px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip{position:fixed;left:1rem;top:1rem;z-index:200;background:var(--cafe);color:var(--off);padding:.75rem 1.1rem;border-radius:99px;text-decoration:none;transform:translateY(-200%);transition:transform .4s var(--ease)}
+.skip:focus{transform:none}
+.wrap{width:100%;max-width:var(--max);margin-inline:auto;padding-inline:var(--gutter)}
+section{position:relative}
+.sec{padding-block:clamp(5rem,12vw,10rem)}
+
+/* labels e numeração editorial */
+.eyebrow{display:flex;align-items:center;gap:.9rem;font-size:.75rem;letter-spacing:.28em;text-transform:uppercase;font-weight:500;color:var(--marrom-ink);margin:0 0 1.6rem}
+.eyebrow .num{font-family:var(--serif);font-size:.95rem;letter-spacing:.04em;font-style:italic;text-transform:none}
+.eyebrow::before{content:"";width:2.4rem;height:1px;background:currentColor;order:1;opacity:.6}
+.eyebrow .num{order:0}.eyebrow .lbl{order:2}
+.title{font-size:clamp(2.2rem,1.4rem + 3.6vw,4.6rem);max-width:18ch;position:relative}
+.title-wrap{position:relative;display:inline-block;padding-bottom:.35em}
+.hand{position:absolute;left:0;bottom:0;width:min(100%,12rem);height:.7rem;overflow:visible;color:var(--marrom)}
+.hand path{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-dasharray:260;stroke-dashoffset:260;transition:stroke-dashoffset 1.4s var(--ease) .35s}
+.is-in .hand path,.hand.is-in path{stroke-dashoffset:0}
+.lead{font-size:clamp(1.08rem,1rem + .4vw,1.3rem);max-width:56ch}
+
+/* botões */
+.btn{--bg:var(--cafe);--fg:var(--off);display:inline-flex;align-items:center;justify-content:center;gap:.7rem;min-height:3.25rem;padding:.85rem 1.6rem;border-radius:999px;background:var(--bg);color:var(--fg);text-decoration:none;font-weight:500;letter-spacing:.06em;font-size:.95rem;border:1px solid transparent;cursor:pointer;position:relative;overflow:hidden;isolation:isolate;transition:transform .6s var(--ease)}
+.btn::before{content:"";position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .6s var(--ease);z-index:-1}
+.btn:hover{transform:translateY(-2px)}
+.btn:hover::before{opacity:.08}
+.btn svg{width:1.15em;height:1.15em;flex:none;transition:transform .6s var(--ease)}
+.btn:hover svg{transform:translateX(3px)}
+.btn--light{--bg:var(--off);--fg:var(--cafe)}
+.btn--ghost{--bg:transparent;--fg:var(--off);border-color:rgba(247,244,239,.7)}
+.btn--ghost-dark{--bg:transparent;--fg:var(--cafe);border-color:rgba(74,52,42,.55)}
+.btn--accent{--bg:var(--borgonha);--fg:var(--off)}
+
+/* ============ NAVBAR ============ */
+.nav{position:fixed;inset:0 0 auto;z-index:100;height:var(--nav-h);color:var(--off)}
+.nav::before{content:"";position:absolute;inset:0;background:rgba(247,244,239,.82);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);box-shadow:0 10px 30px -18px rgba(74,52,42,.35);opacity:0;transform:scaleY(.82);transform-origin:top;transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.nav__in{position:relative;height:100%;display:flex;align-items:center;gap:1.5rem;transition:transform .6s var(--ease)}
+.nav.is-solid{color:var(--cafe)}
+.nav.is-solid::before{opacity:1}
+.nav.is-solid .nav__in{transform:translateY(-7px)}
+.nav,.nav a,.nav button{transition:color .6s var(--ease)}
+.logo{display:flex;flex-direction:column;text-decoration:none;line-height:1;margin-right:auto;white-space:nowrap}
+.logo b{font-family:var(--serif);font-weight:400;font-size:1.35rem;letter-spacing:.01em}
+.logo small{font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;margin-top:.35rem;opacity:.85}
+.nav__links{display:none;list-style:none;margin:0;padding:0;gap:clamp(1rem,1.6vw,2rem)}
+.nav__links a{position:relative;display:block;padding:.5rem 0;text-decoration:none;font-size:.86rem;letter-spacing:.08em}
+.nav__links svg{position:absolute;left:-4%;bottom:-.05rem;width:108%;height:.55rem;overflow:visible}
+.nav__links path{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-dasharray:140;stroke-dashoffset:140;transition:stroke-dashoffset .9s var(--ease)}
+.nav__links a.is-active path,.nav__links a:hover path{stroke-dashoffset:0}
+.nav__cta{min-height:2.75rem;padding:.55rem 1.25rem;font-size:.85rem}
+.burger{display:inline-grid;place-items:center;width:2.9rem;height:2.9rem;border-radius:50%;border:1px solid currentColor;background:transparent;cursor:pointer;padding:0;position:relative;z-index:2}
+.burger span{position:absolute;width:1.1rem;height:1.5px;background:currentColor;border-radius:2px;transition:transform .6s var(--ease),opacity .4s var(--ease)}
+.burger span:nth-child(1){transform:translateY(-4px)}
+.burger span:nth-child(2){transform:translateY(4px)}
+.nav.menu-open{color:var(--off)}
+.nav.menu-open::before{opacity:0}
+.nav.menu-open .burger span:nth-child(1){transform:rotate(45deg)}
+.nav.menu-open .burger span:nth-child(2){transform:rotate(-45deg)}
+@media (min-width:1120px){.nav__links{display:flex}.burger{display:none}}
+@media (max-width:400px){.nav__in{gap:.7rem}.logo b{font-size:1.12rem}.logo small{font-size:.55rem;letter-spacing:.24em}.nav__cta{padding:.5rem 1rem;font-size:.8rem;min-height:2.6rem}.burger{width:2.65rem;height:2.65rem}}
+
+.menu{position:fixed;inset:0;z-index:99;background:var(--cafe) var(--paper);color:var(--off);display:flex;flex-direction:column;justify-content:center;padding:calc(var(--nav-h) + 1rem) var(--gutter) 2.5rem;opacity:0;visibility:hidden;transition:opacity .6s var(--ease),visibility 0s .6s}
+.menu.is-open{opacity:1;visibility:visible;transition:opacity .6s var(--ease)}
+.menu ol{list-style:none;margin:0;padding:0;counter-reset:m}
+.menu li{overflow:hidden}
+.menu a{display:flex;align-items:baseline;gap:1rem;font-family:var(--serif);font-size:clamp(2rem,8.5vw,3.6rem);line-height:1.25;text-decoration:none;transform:translateY(110%);opacity:0;transition:transform .9s var(--ease),opacity .9s var(--ease)}
+.menu a small{font-family:var(--sans);font-size:.75rem;letter-spacing:.2em;opacity:.7}
+.menu.is-open a{transform:none;opacity:1;transition-delay:calc(var(--i) * 70ms + 120ms)}
+.menu__foot{margin-top:2.5rem;font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+
+/* ============ 01 HERO ============ */
+.hero{min-height:100svh;color:var(--off);background:var(--cafe);overflow:hidden;display:flex;align-items:center;padding:calc(var(--nav-h) + 1.5rem) 0 7rem;isolation:isolate}
+.hero__mesh{position:absolute;inset:0;width:100%;height:100%;z-index:-2}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(60% 55% at 45% 48%,rgba(52,35,28,.55),transparent 75%),linear-gradient(180deg,rgba(58,40,32,.35),transparent 30%,transparent 70%,rgba(58,40,32,.45))}
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--noise);opacity:.18;mix-blend-mode:overlay}
+.hero__grid{display:grid;gap:3rem;align-items:center}
+.hero__text{text-align:center;display:flex;flex-direction:column;align-items:center}
+.hero__hi{font-size:clamp(.95rem,.9rem + .3vw,1.15rem);letter-spacing:.06em;margin:0 0 .4rem;position:relative;padding-bottom:.35rem;font-weight:500}
+.hero__hi svg{position:absolute;left:0;bottom:-.2rem;width:100%;height:.55rem;overflow:visible}
+.hero__hi path{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-dasharray:200;stroke-dashoffset:200;animation:draw 1.4s var(--ease) 1s forwards}
+.hero__name{font-size:clamp(3.1rem,min(1rem + 10.5vw,16.5vh),10.5rem);line-height:.92;letter-spacing:-.025em;font-weight:400;margin:.2em 0 .35em}
+.hero__name .ln{display:block;overflow:hidden;padding-bottom:.06em}
+.hero__name .ln span{display:block;transform:translateY(105%);animation:rise 1.3s var(--ease) forwards}
+.hero__name .ln:nth-child(2) span{animation-delay:.12s}
+@media (min-width:1024px){.hero__name .ln:nth-child(2) span{padding-left:.6em}}
+.hero__sub{font-family:var(--serif);font-size:clamp(1.15rem,1rem + .8vw,1.65rem);line-height:1.4;max-width:30ch;margin:0 0 .9rem;opacity:0;animation:fade 1.2s var(--ease) .45s forwards}
+.hero__meta{font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;margin:0 0 2.2rem;opacity:0;animation:fade 1.2s var(--ease) .6s forwards;max-width:46ch}
+.hero__ctas{display:flex;flex-wrap:wrap;gap:.9rem;justify-content:center;opacity:0;animation:fade 1.2s var(--ease) .75s forwards}
+.hero__visual{position:relative;justify-self:center;width:min(78vw,380px)}
+.organic{position:relative;border-radius:58% 42% 47% 53% / 46% 44% 56% 54%;overflow:hidden;aspect-ratio:320/470;background:var(--linho);box-shadow:0 40px 80px -40px rgba(20,12,8,.7)}
+.organic img{width:100%;height:118%;object-fit:cover;object-position:50% 0;will-change:transform}
+.hero__visual .organic{opacity:0;transform:scale(.94);animation:frameIn 1.6s var(--ease) .35s forwards}
+.hero__ring{position:absolute;inset:-14px;border:1px solid rgba(247,244,239,.35);border-radius:46% 54% 52% 48% / 55% 45% 55% 45%;pointer-events:none;animation:spin 40s linear infinite}
+.hero__arrow{position:absolute;width:9rem;height:9rem;left:-5.5rem;top:-3.5rem;color:var(--off);pointer-events:none}
+.hero__arrow path{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hero__arrow .a1{stroke-dasharray:420;stroke-dashoffset:420;animation:draw 2s var(--ease) 1.2s forwards}
+.hero__arrow .a2{stroke-dasharray:60;stroke-dashoffset:60;animation:draw .7s var(--ease) 2.9s forwards}
+.scroll-cue{position:absolute;left:50%;bottom:1.5rem;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.6rem;font-size:.65rem;letter-spacing:.32em;text-transform:uppercase;text-decoration:none;color:var(--off)}
+.scroll-cue i{width:1px;height:2.6rem;background:rgba(247,244,239,.35);position:relative;overflow:hidden}
+.scroll-cue i::after{content:"";position:absolute;left:0;top:0;width:1px;height:45%;background:var(--off);animation:cue 2.4s var(--ease) infinite}
+@media (min-width:1024px){
+  .hero__grid{grid-template-columns:1.45fr .75fr;gap:2rem}
+  .hero__visual{width:min(100%,340px)}
+  .hero__arrow{left:-7.5rem;top:-4.5rem;width:10rem;height:10rem}
+}
+@media (max-width:1023px){.hero__arrow{transform:rotate(-12deg) scale(.8);left:-3.5rem;top:-4rem}}
+@media (max-width:420px){.hero__arrow{display:none}}
+
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes rise{to{transform:none}}
+@keyframes fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes frameIn{to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes cue{0%{transform:translateY(-100%)}60%,100%{transform:translateY(230%)}}
+
+/* revelações */
+.js [data-reveal]{opacity:0;transform:translateY(28px);transition:opacity var(--t) var(--ease),transform var(--t) var(--ease);transition-delay:calc(var(--d,0) * 110ms)}
+.js [data-reveal].is-in{opacity:1;transform:none}
+.mask{position:relative;overflow:hidden}
+.js .mask::after{content:"";position:absolute;inset:-1px;background:var(--linho);transform-origin:right;transition:transform 1.1s var(--ease) .1s;z-index:2}
+.js .mask.is-in::after{transform:scaleX(0)}
+
+/* ============ 02 MANIFESTO ============ */
+.manifesto{background:var(--areia) var(--paper);padding-block:clamp(6rem,14vw,11rem);text-align:center}
+.manifesto .eyebrow{justify-content:center}
+.rotator{display:grid;min-height:clamp(10rem,22vw,15rem);align-items:center;max-width:22ch;margin-inline:auto}
+.rotator p{grid-area:1/1;margin:0;font-family:var(--serif);font-size:clamp(1.9rem,1.1rem + 3.6vw,4.4rem);line-height:1.12;letter-spacing:-.015em}
+.rotator .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em}
+.rotator .w>span{display:inline-block;transform:translateY(110%);opacity:0;transition:transform .9s var(--ease),opacity .9s var(--ease);transition-delay:calc(var(--i) * 45ms)}
+.rotator p.is-on .w>span{transform:none;opacity:1}
+.rotator p.is-out .w>span{transform:translateY(-110%);opacity:0;transition-duration:.7s;transition-delay:calc(var(--i) * 25ms)}
+.manifesto__sign{margin-top:2.5rem;font-size:.75rem;letter-spacing:.3em;text-transform:uppercase;color:var(--marrom-ink)}
+
+/* ============ 03 ESCUTA ============ */
+.escuta{background:var(--off) var(--paper)}
+.escuta__grid{display:grid;gap:clamp(3rem,6vw,6rem);align-items:start}
+.escuta__quote{font-family:var(--serif);font-size:clamp(1.9rem,1.2rem + 2.6vw,3.6rem);line-height:1.15;margin:0 0 2.5rem}
+.escuta__img{border-radius:2px 2px 140px 2px;aspect-ratio:720/464}
+.escuta__img img{width:100%;height:115%;object-fit:cover;will-change:transform}
+.points{list-style:none;margin:0;padding:0;border-top:1px solid rgba(74,52,42,.18)}
+.points li{display:grid;grid-template-columns:auto 1fr;gap:1.25rem;padding:1.6rem 0;border-bottom:1px solid rgba(74,52,42,.18)}
+.points svg{width:2.6rem;height:2.6rem;color:var(--marrom);margin-top:.2rem}
+.points svg *{fill:none;stroke:currentColor;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.points h3{font-size:clamp(1.25rem,1.1rem + .6vw,1.6rem);margin-bottom:.35rem}
+.points p{margin:0;color:var(--marrom-ink)}
+.points .n{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--marrom-ink);display:block;margin-bottom:.2rem}
+@media (min-width:900px){.escuta__grid{grid-template-columns:1.1fr .9fr}.points{margin-top:6rem}}
+
+/* ============ 04 AJUDA ============ */
+.ajuda{background:var(--areia) var(--paper)}
+.ajuda__head{display:grid;gap:1.5rem;margin-bottom:clamp(2.5rem,5vw,4rem)}
+@media (min-width:900px){.ajuda__head{grid-template-columns:1.2fr .8fr;align-items:end}}
+.acc{list-style:none;margin:0;padding:0;display:grid;gap:.85rem}
+.acc__item{background:rgba(247,244,239,.72);border:1px solid rgba(74,52,42,.12);border-radius:22px;transition:transform .7s var(--ease),box-shadow .7s var(--ease)}
+.acc__item:hover{transform:translateY(-3px);box-shadow:0 24px 50px -32px rgba(74,52,42,.45)}
+.acc__item h3{margin:0;font-size:inherit}
+.acc__btn{width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1.1rem;text-align:left;background:none;border:0;padding:1.4rem clamp(1.1rem,3vw,2rem);cursor:pointer;border-radius:22px}
+.acc__btn .n{font-family:var(--serif);font-style:italic;font-size:.95rem;color:var(--marrom-ink);min-width:1.8rem}
+.acc__btn .t{font-family:var(--serif);font-size:clamp(1.3rem,1.1rem + 1vw,2rem);line-height:1.2}
+.acc__icon{width:2.4rem;height:2.4rem;border-radius:50%;border:1px solid rgba(74,52,42,.35);display:grid;place-items:center;flex:none}
+.acc__icon::before,.acc__icon::after{content:"";grid-area:1/1;width:.85rem;height:1.3px;background:currentColor;transition:transform .6s var(--ease)}
+.acc__icon::after{transform:rotate(90deg)}
+.acc__btn[aria-expanded="true"] .acc__icon::after{transform:rotate(0)}
+.acc__panel{padding:0 clamp(1.1rem,3vw,2rem) 1.8rem calc(clamp(1.1rem,3vw,2rem) + 2.9rem)}
+.acc__panel[hidden]{display:none}
+.acc__panel>div{animation:panelIn .7s var(--ease) both}
+@keyframes panelIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.acc__cols{display:grid;gap:1.5rem}
+@media (min-width:820px){.acc__cols{grid-template-columns:1fr 1fr;gap:3rem}}
+.signs h4{font-family:var(--sans);font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;font-weight:500;color:var(--marrom-ink);margin-bottom:.8rem}
+.signs ul{margin:0;padding:0;list-style:none}
+.signs li{position:relative;padding-left:1.4rem;margin-bottom:.45rem}
+.signs li::before{content:"";position:absolute;left:0;top:.8em;width:.7rem;height:1px;background:var(--marrom)}
+.acc__note{font-size:.9rem;color:var(--marrom-ink)}
+.acc__go{margin-top:1rem}
+@media (max-width:560px){.acc__panel{padding-left:clamp(1.1rem,3vw,2rem)}}
+
+/* ============ 05 SOBRE ============ */
+.sobre{background:var(--off) var(--paper);overflow:hidden}
+.sobre__grid{display:grid;gap:clamp(3rem,6vw,6rem);align-items:center}
+.sobre__visual{position:relative;max-width:420px;width:100%;justify-self:center}
+.sobre__photo{border-radius:220px 220px 4px 4px;aspect-ratio:320/520}
+.sobre__photo img{width:100%;height:112%;object-fit:cover;object-position:50% 0;will-change:transform}
+.sobre__plant{position:absolute;width:42%;left:-22%;bottom:-8%;border-radius:4px 120px 4px 4px;aspect-ratio:400/870;box-shadow:0 30px 60px -36px rgba(74,52,42,.5)}
+.sobre__plant img{width:100%;height:100%;object-fit:cover}
+.sobre__cred{display:inline-flex;flex-wrap:wrap;gap:.4rem 1rem;font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--marrom-ink);border-top:1px solid rgba(74,52,42,.2);padding-top:1.2rem;margin-top:1rem}
+.sobre__text p{max-width:58ch}
+.sobre__text .first::first-letter{font-family:var(--serif);float:left;font-size:4.6em;line-height:.82;padding:.08em .12em 0 0;color:var(--cafe)}
+.tags{display:flex;flex-wrap:wrap;gap:.5rem;margin:1.6rem 0 0;padding:0;list-style:none}
+.tags li{border:1px solid rgba(74,52,42,.28);border-radius:99px;padding:.35rem .9rem;font-size:.85rem}
+@media (min-width:960px){.sobre__grid{grid-template-columns:.8fr 1.2fr}.sobre__plant{left:-18%}}
+@media (max-width:600px){.sobre__plant{left:-6%;width:34%}}
+
+/* ============ 06 VOZES ============ */
+.vozes{background:var(--linho) var(--paper);overflow:hidden}
+.vozes__head{text-align:center;display:flex;flex-direction:column;align-items:center;margin-bottom:clamp(2.5rem,5vw,4rem)}
+.vozes__head .eyebrow{justify-content:center}
+.car{position:relative;max-width:980px;margin-inline:auto}
+.car__track{display:grid}
+.slide{grid-area:1/1;background:var(--off) var(--paper);border-radius:28px;padding:clamp(2.2rem,6vw,5rem) clamp(1.5rem,6vw,5rem) clamp(2rem,5vw,3.5rem);box-shadow:0 40px 80px -50px rgba(74,52,42,.45);opacity:0;visibility:hidden;transform:translateX(30px);transition:opacity .9s var(--ease),transform .9s var(--ease),visibility 0s .9s}
+.slide.is-on{opacity:1;visibility:visible;transform:none;transition:opacity .9s var(--ease) .15s,transform .9s var(--ease) .15s}
+.slide.is-prev{transform:translateX(-30px)}
+.slide blockquote{margin:0;position:relative}
+.slide .q{display:block;font-family:var(--serif);font-size:clamp(5rem,4rem + 6vw,9rem);line-height:.6;height:.5em;color:var(--borgonha)}
+.slide .ph{display:block;overflow:hidden}
+.slide .ph>span{display:block;font-family:var(--serif);font-style:italic;font-size:clamp(1.5rem,1rem + 2.4vw,2.9rem);line-height:1.25;transform:translateY(40%);opacity:0;transition:transform 1s var(--ease) .25s,opacity 1s var(--ease) .25s}
+.slide.is-on .ph>span{transform:none;opacity:1}
+.slide footer{margin-top:2rem;display:flex;align-items:center;gap:1rem;font-size:.78rem;letter-spacing:.24em;text-transform:uppercase;color:var(--marrom-ink)}
+.slide footer::before{content:"";width:2.4rem;height:1px;background:currentColor}
+.car__ctrl{display:flex;align-items:center;justify-content:center;gap:1.25rem;margin-top:2rem}
+.car__arrow{width:3rem;height:3rem;border-radius:50%;border:1px solid rgba(74,52,42,.4);background:transparent;display:grid;place-items:center;cursor:pointer;transition:transform .6s var(--ease)}
+.car__arrow:hover{transform:scale(1.06)}
+.car__arrow svg{width:1.1rem;height:1.1rem;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.car__dots{display:flex;gap:.25rem}
+.car__dots button{width:2rem;height:2rem;background:none;border:0;cursor:pointer;display:grid;place-items:center;padding:0}
+.car__dots button::before{content:"";width:.5rem;height:.5rem;border-radius:50%;border:1px solid var(--cafe);transition:transform .6s var(--ease),background-color .6s var(--ease)}
+.car__dots button[aria-current="true"]::before{background:var(--cafe);transform:scale(1.25)}
+.car__note{text-align:center;font-size:.8rem;color:var(--marrom-ink);margin-top:1.6rem}
+
+/* ============ 07 COMO FUNCIONA ============ */
+.como{background:var(--off) var(--paper)}
+.como__head{display:grid;gap:1.5rem;margin-bottom:clamp(3rem,6vw,5rem)}
+@media (min-width:900px){.como__head{grid-template-columns:1.2fr .8fr;align-items:end}}
+.steps{position:relative;list-style:none;margin:0;padding:0;display:grid;gap:2.6rem}
+.steps__line{position:absolute;left:1.6rem;top:1.6rem;bottom:1.6rem;width:1px;background:var(--marrom);transform:scaleY(0);transform-origin:top;transition:transform 2.2s var(--ease) .2s}
+.steps.is-in .steps__line{transform:none}
+.step{position:relative;padding-left:5rem}
+.step__n{position:absolute;left:0;top:0;width:3.2rem;height:3.2rem;border-radius:50%;background:var(--off);border:1px solid var(--marrom);display:grid;place-items:center;font-family:var(--serif);font-style:italic;font-size:1.05rem}
+.step h3{font-size:clamp(1.35rem,1.2rem + .7vw,1.85rem);margin:.4rem 0 .6rem}
+.step p{margin:0;color:var(--marrom-ink);max-width:34ch}
+.modes{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:clamp(3rem,5vw,4.5rem)}
+.mode{display:flex;align-items:center;gap:.9rem;border:1px solid rgba(74,52,42,.22);border-radius:999px;padding:.7rem 1.3rem .7rem .8rem;font-size:.95rem}
+.mode svg{width:2rem;height:2rem;color:var(--marrom)}
+.mode svg *{fill:none;stroke:currentColor;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+@media (min-width:900px){
+  .steps{grid-template-columns:repeat(4,1fr);gap:2rem}
+  .steps__line{left:1.6rem;right:1.6rem;top:1.6rem;bottom:auto;width:auto;height:1px;transform:scaleX(0);transform-origin:left}
+  .step{padding-left:0;padding-top:5rem}
+}
+
+/* ============ 08 AGENDAR ============ */
+.agendar{background:var(--cafe) var(--paper);color:var(--off)}
+.agendar .eyebrow{color:#E3D8CB}
+.agendar__grid{display:grid;gap:clamp(2.5rem,5vw,4.5rem);align-items:start}
+@media (min-width:1000px){.agendar__grid{grid-template-columns:.85fr 1.15fr}}
+.agendar__intro p{color:#EDE5DA;max-width:42ch}
+.privacy{display:flex;gap:.8rem;align-items:flex-start;font-size:.9rem;margin-top:1.8rem;color:#E3D8CB}
+.privacy svg{width:1.4rem;height:1.4rem;flex:none;margin-top:.2rem}
+.privacy svg *{fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.panel{background:var(--off) var(--paper);color:var(--cafe);border-radius:30px;padding:clamp(1.4rem,4vw,2.8rem);box-shadow:0 50px 100px -50px rgba(0,0,0,.6)}
+.field{border:0;margin:0 0 1.5rem;padding:0;min-width:0}
+.field legend,.field>label{display:block;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;font-weight:500;color:var(--marrom-ink);margin-bottom:.7rem;padding:0}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.chip span{display:inline-flex;align-items:center;min-height:2.75rem;padding:.55rem 1.1rem;border:1px solid rgba(74,52,42,.3);border-radius:99px;transition:background-color .5s var(--ease),color .5s var(--ease),border-color .5s var(--ease);font-size:.95rem}
+.chip input:checked+span{background:var(--cafe);color:var(--off);border-color:var(--cafe)}
+.chip input:focus-visible+span{outline:2px solid var(--cafe);outline-offset:3px}
+.select{position:relative}
+.select select{appearance:none;-webkit-appearance:none;width:100%;min-height:3.2rem;border:1px solid rgba(74,52,42,.3);border-radius:14px;background:transparent;padding:.7rem 3rem .7rem 1rem;cursor:pointer;color:var(--cafe)}
+.select::after{content:"";position:absolute;right:1.2rem;top:50%;width:.55rem;height:.55rem;border-right:1.4px solid var(--cafe);border-bottom:1.4px solid var(--cafe);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.select select.flash{animation:flash 1.6s var(--ease)}
+@keyframes flash{0%,100%{box-shadow:0 0 0 0 rgba(74,52,42,0)}30%{box-shadow:0 0 0 6px rgba(74,52,42,.18)}}
+.pair{display:grid;gap:0 1.5rem}
+@media (min-width:560px){.pair{grid-template-columns:1fr 1fr}}
+.preview{margin:.5rem 0 1.6rem;background:var(--areia);border-radius:18px 18px 18px 4px;padding:1.1rem 1.25rem;position:relative}
+.preview small{display:block;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--marrom-ink);margin-bottom:.4rem}
+.preview p{margin:0;font-size:.98rem;line-height:1.6;white-space:pre-line}
+.panel .btn{width:100%}
+
+/* ============ 09 DÚVIDAS ============ */
+.duvidas{background:var(--areia) var(--paper)}
+.duvidas__grid{display:grid;gap:clamp(2.5rem,5vw,5rem)}
+@media (min-width:960px){.duvidas__grid{grid-template-columns:.8fr 1.2fr}}
+.faq{list-style:none;margin:0;padding:0;border-top:1px solid rgba(74,52,42,.22)}
+.faq li{border-bottom:1px solid rgba(74,52,42,.22)}
+.faq h3{margin:0;font-size:inherit}
+.faq button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:1rem;text-align:left;background:none;border:0;padding:1.5rem 0;cursor:pointer;font-family:var(--serif);font-size:clamp(1.15rem,1.05rem + .5vw,1.5rem);line-height:1.3}
+.faq .acc__panel{padding:0 0 1.6rem}
+.faq .acc__panel p{max-width:62ch}
+.mark{background:rgba(138,106,87,.16);padding:0 .3em;border-radius:4px;font-size:.92em;white-space:nowrap}
+
+/* ============ 10 RODAPÉ ============ */
+.footer{background:var(--cafe-2) var(--paper);color:#EDE5DA;padding:clamp(4rem,8vw,6.5rem) 0 2rem}
+.footer a{color:var(--off)}
+.footer .footer__big{font-family:var(--serif);font-size:clamp(2.4rem,1.4rem + 5vw,6rem);line-height:1;color:var(--off);margin-bottom:2.5rem}
+.footer__grid{display:grid;gap:2rem;border-top:1px solid rgba(237,229,218,.2);padding-top:2.5rem}
+@media (min-width:820px){.footer__grid{grid-template-columns:repeat(3,1fr)}}
+.footer h3{font-family:var(--sans);font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;font-weight:500;margin-bottom:.8rem;color:#D9CCBD}
+.footer p{margin:0 0 .4rem;font-size:.95rem}
+.alert{margin-top:2.5rem;border:1px solid rgba(237,229,218,.3);border-radius:18px;padding:1.1rem 1.3rem;display:flex;gap:1rem;align-items:flex-start;font-size:.95rem;color:var(--off)}
+.alert svg{width:1.5rem;height:1.5rem;flex:none;margin-top:.15rem}
+.alert svg *{fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.footer__bottom{display:flex;flex-wrap:wrap;gap:1rem 2rem;justify-content:space-between;align-items:center;margin-top:2.5rem;font-size:.8rem;color:#CDBFAF}
+.linkbtn{background:none;border:0;padding:.3rem 0;cursor:pointer;text-decoration:underline;text-underline-offset:4px;color:var(--off);letter-spacing:.06em;font-size:.85rem}
+
+/* botão flutuante */
+.fab{position:fixed;right:max(1rem,env(safe-area-inset-right));bottom:max(1rem,env(safe-area-inset-bottom));z-index:95;width:3.6rem;height:3.6rem;border-radius:50%;background:var(--cafe);color:var(--off);display:grid;place-items:center;box-shadow:0 18px 40px -16px rgba(30,20,15,.6);border:1px solid rgba(247,244,239,.25);transform:translateY(140%);opacity:0;transition:transform .8s var(--ease),opacity .8s var(--ease)}
+.fab.is-on{transform:none;opacity:1}
+.fab:hover{transform:translateY(-3px)}
+.fab svg{width:1.55rem;height:1.55rem}
+.fab svg *{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+
+/* ============ TOUR ============ */
+.tour{position:fixed;inset:0;z-index:300}
+.tour[hidden]{display:none}
+.tour__catch{position:absolute;inset:0}
+.tour__spot{position:fixed;left:0;top:0;border-radius:18px;box-shadow:0 0 0 200vmax rgba(46,31,24,.74);pointer-events:none;transition:opacity .5s var(--ease)}
+.tour__spot::after{content:"";position:absolute;inset:-6px;border-radius:22px;border:1px solid rgba(247,244,239,.7)}
+.tour__card{position:fixed;left:0;top:0;width:min(360px,calc(100vw - 32px));background:var(--off) var(--paper);color:var(--cafe);border-radius:20px;padding:1.4rem 1.4rem 1.2rem;box-shadow:0 30px 70px -30px rgba(0,0,0,.6);opacity:0;transform:translateY(8px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.tour__card.is-on{opacity:1;transform:none}
+.tour__arrow{position:absolute;width:16px;height:16px;background:var(--off);transform:rotate(45deg);left:var(--ax,50%);margin-left:-8px}
+.tour__card[data-side="bottom"] .tour__arrow{top:-7px}
+.tour__card[data-side="top"] .tour__arrow{bottom:-7px}
+.tour__card[data-side="left"] .tour__arrow,.tour__card[data-side="right"] .tour__arrow{left:auto;margin:-8px 0 0;top:var(--ay,50%)}
+.tour__card[data-side="left"] .tour__arrow{right:-7px}
+.tour__card[data-side="right"] .tour__arrow{left:-7px}
+.tour__card[data-side="none"] .tour__arrow{display:none}
+.tour__count{font-size:.7rem;letter-spacing:.24em;text-transform:uppercase;color:var(--marrom-ink);margin:0 0 .5rem}
+.tour__card h2{font-size:1.5rem;margin-bottom:.4rem}
+.tour__card p{font-size:.98rem;margin-bottom:1.2rem}
+.tour__btns{display:flex;align-items:center;gap:.5rem}
+.tour__btns .skip-t{margin-right:auto;background:none;border:0;padding:.6rem .2rem;cursor:pointer;text-decoration:underline;text-underline-offset:4px;color:var(--marrom-ink);font-size:.9rem}
+.tour__btns .btn{min-height:2.75rem;padding:.5rem 1.1rem;font-size:.88rem}
+.tour__btns .btn[disabled]{opacity:.4;cursor:default;transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0s!important}
+  .js [data-reveal]{opacity:1;transform:none}
+  .hero__ring,.scroll-cue i::after{animation:none!important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+<header class="nav" id="nav">
+  <div class="wrap nav__in">
+    <a class="logo" href="#inicio"><b>Ariane Cristina</b><small>Saúde mental</small></a>
+    <nav aria-label="Principal">
+      <ul class="nav__links" id="navLinks">
+        <li><a href="#inicio" data-link="inicio">Início<svg viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 25 2, 55 7, 98 3"/></svg></a></li>
+        <li><a href="#escuta" data-link="escuta">Escuta<svg viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 25 2, 55 7, 98 3"/></svg></a></li>
+        <li><a href="#ajuda" data-link="ajuda">Como posso ajudar<svg viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 25 2, 55 7, 98 3"/></svg></a></li>
+        <li><a href="#sobre" data-link="sobre">Sobre<svg viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 25 2, 55 7, 98 3"/></svg></a></li>
+        <li><a href="#como-funciona" data-link="como-funciona">Como funciona<svg viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 25 2, 55 7, 98 3"/></svg></a></li>
+        <li><a href="#duvidas" data-link="duvidas">Dúvidas<svg viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 25 2, 55 7, 98 3"/></svg></a></li>
+      </ul>
+    </nav>
+    <a class="btn btn--accent nav__cta" id="navCta" href="#agendar">Agendar</a>
+    <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="menu" aria-label="Abrir menu"><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="menu" id="menu" aria-hidden="true">
+  <nav aria-label="Menu do celular">
+    <ol>
+      <li><a href="#inicio" style="--i:0" tabindex="-1"><small>01</small>Início</a></li>
+      <li><a href="#escuta" style="--i:1" tabindex="-1"><small>03</small>Escuta</a></li>
+      <li><a href="#ajuda" style="--i:2" tabindex="-1"><small>04</small>Como posso <em>ajudar</em></a></li>
+      <li><a href="#sobre" style="--i:3" tabindex="-1"><small>05</small>Sobre</a></li>
+      <li><a href="#como-funciona" style="--i:4" tabindex="-1"><small>07</small>Como funciona</a></li>
+      <li><a href="#duvidas" style="--i:5" tabindex="-1"><small>09</small>Dúvidas</a></li>
+      <li><a href="#agendar" style="--i:6" tabindex="-1"><small>08</small>Agendar</a></li>
+    </ol>
+  </nav>
+  <p class="menu__foot">Presencial e online · @dra.arianecristina</p>
+</div>
+
+<main id="conteudo">
+
+<!-- 01 HERO -->
+<section class="hero" id="inicio" data-nav="inicio" aria-labelledby="heroTitle">
+  <canvas class="hero__mesh" id="mesh" aria-hidden="true"></canvas>
+  <div class="wrap hero__grid">
+    <div class="hero__text">
+      <p class="hero__hi">Prazer, eu sou a<svg viewBox="0 0 120 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 30 1, 70 8, 118 3"/></svg></p>
+      <h1 class="hero__name" id="heroTitle"><span class="ln"><span>Ariane</span></span><span class="ln"><span>Cristina</span></span></h1>
+      <p class="hero__sub">Acolhimento, ciência e cuidado em cada atendimento.</p>
+      <p class="hero__meta"><span data-cred>Médica com atuação em saúde mental</span> · Mulheres, mães e crianças atípicas</p>
+      <div class="hero__ctas">
+        <a class="btn btn--light" data-wa href="https://wa.me/" target="_blank" rel="noopener">Agendar pelo WhatsApp<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <a class="btn btn--ghost" href="#escuta">Conheça meu trabalho</a>
+      </div>
+    </div>
+    <div class="hero__visual">
+      <svg class="hero__arrow" viewBox="0 0 160 160" aria-hidden="true"><path class="a1" d="M12 14 C 30 40, 58 52, 70 40 C 82 28, 66 12, 56 26 C 44 44, 72 78, 96 96 C 112 108, 126 116, 140 122"/><path class="a2" d="M122 126 L 142 123 L 132 106"/></svg>
+      <span class="hero__ring" aria-hidden="true"></span>
+      <div class="organic"><img src="assets/img/retrato-320.webp" srcset="assets/img/retrato-160.webp 160w, assets/img/retrato-320.webp 320w" sizes="(min-width:1024px) 340px, 78vw" width="320" height="570" alt="Retrato da Dra. Ariane Cristina, de cabelos castanhos longos e blusa branca, sorrindo de leve diante de uma parede de tijolos claros" fetchpriority="high" data-parallax="0.06"></div>
+    </div>
+  </div>
+  <a class="scroll-cue" href="#manifesto" aria-label="Role até o manifesto"><span>Role</span><i aria-hidden="true"></i></a>
+</section>
+
+<!-- 02 MANIFESTO -->
+<section class="manifesto" id="manifesto" data-nav="inicio" aria-labelledby="manTitle">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal><span class="num">02</span><span class="lbl" id="manTitle">Manifesto</span></p>
+    <ul class="sr-only">
+      <li>A essência se multiplica, seja ela qual for.</li>
+      <li>Por trás de cada comportamento, existe uma história.</li>
+      <li>Toda história merece ser ouvida com respeito.</li>
+    </ul>
+    <div class="rotator" id="rotator" aria-hidden="true">
+      <p data-phrase="A |essência| se multiplica, seja ela qual for."></p>
+      <p data-phrase="Por trás de cada comportamento, existe uma |história.|"></p>
+      <p data-phrase="Toda história merece ser ouvida com |respeito.|"></p>
+    </div>
+    <p class="manifesto__sign" data-reveal>Dra. Ariane Cristina</p>
+  </div>
+</section>
+
+<!-- 03 ESCUTA -->
+<section class="escuta sec" id="escuta" data-nav="escuta" aria-labelledby="escTitle">
+  <div class="wrap escuta__grid">
+    <div>
+      <p class="eyebrow" data-reveal><span class="num">03</span><span class="lbl">Escuta qualificada</span></p>
+      <h2 class="sr-only" id="escTitle">Escuta qualificada</h2>
+      <p class="escuta__quote" data-reveal data-hand>É ouvir além da queixa. É <em>acolher</em> sem julgamento, com técnica, <em>empatia</em> e presença.</p>
+      <figure class="mask escuta__img" data-reveal-mask style="margin:0">
+        <img src="assets/img/livro-cafe-720.webp" srcset="assets/img/livro-cafe-360.webp 360w, assets/img/livro-cafe-720.webp 720w" sizes="(min-width:900px) 50vw, 100vw" width="720" height="464" loading="lazy" decoding="async" alt="Xícara de café com espuma sobre um livro de capa bordô, apoiados em uma poltrona de tecido claro" data-parallax="0.05">
+      </figure>
+    </div>
+    <ul class="points">
+      <li data-reveal style="--d:1">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="17" cy="17" r="10"/><path d="M24.5 24.5 33 33"/><path d="M13 17c1.5-2.5 6.5-2.5 8 0"/></svg>
+        <div><span class="n">i.</span><h3>Identificação precoce do sofrimento</h3><p>Perceber cedo o que ainda não tem nome muda o caminho do cuidado.</p></div>
+      </li>
+      <li data-reveal style="--d:2">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 22c0-6 5-9 9-9s6 3 6 6-3 5-6 5"/><path d="M32 18c0 6-5 9-9 9s-6-3-6-6 3-5 6-5"/></svg>
+        <div><span class="n">ii.</span><h3>Fortalecimento do vínculo</h3><p>Confiança se constrói devagar, uma consulta de cada vez.</p></div>
+      </li>
+      <li data-reveal style="--d:3">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 32c6 0 8-6 14-6s6-8 14-8"/><circle cx="6" cy="32" r="1.8"/><circle cx="34" cy="18" r="1.8"/><path d="M27 8l7 0 0 7"/></svg>
+        <div><span class="n">iii.</span><h3>Melhor adesão ao tratamento</h3><p>Quem se sente compreendido entende o porquê de cada passo.</p></div>
+      </li>
+      <li data-reveal style="--d:4">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 24c3 0 5 1 7 3h6c2 0 2-3 0-3h-4"/><path d="M8 32h14l10-7c1.5-1-.2-3.4-2-2.6L24 25"/><path d="M24 10.5c1.4-2.6 5.6-2.6 6 .6.3 2.7-3.2 4.9-6 7-2.8-2.1-6.3-4.3-6-7 .4-3.2 4.6-3.2 6-.6z"/></svg>
+        <div><span class="n">iv.</span><h3>Cuidado mais humano</h3><p>Você não é um diagnóstico. É uma história inteira.</p></div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- 04 COMO POSSO TE AJUDAR -->
+<section class="ajuda sec" id="ajuda" data-nav="ajuda" aria-labelledby="ajTitle">
+  <div class="wrap">
+    <div class="ajuda__head">
+      <div>
+        <p class="eyebrow" data-reveal><span class="num">04</span><span class="lbl">Como posso te ajudar</span></p>
+        <div class="title-wrap" data-reveal><h2 class="title" id="ajTitle">Cada sofrimento tem um <em>jeito</em> de ser cuidado.</h2><svg class="hand" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 40 3, 90 3, 130 7 S 190 12, 198 5"/></svg></div>
+      </div>
+      <p class="lead" data-reveal style="--d:1">Toque em um tema. Você vai encontrar um texto curto, alguns sinais que merecem atenção e um atalho para marcar a conversa.</p>
+    </div>
+    <ul class="acc" id="ajudaAcc">
+      <li class="acc__item" data-reveal>
+        <h3><button class="acc__btn" type="button" aria-expanded="false" aria-controls="aj1" id="aj1b"><span class="n">01</span><span class="t">Ansiedade</span><span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="aj1" role="region" aria-labelledby="aj1b" hidden><div class="acc__cols">
+          <div><p>Preocupação que não desliga, corpo em alerta, noites que não descansam. A ansiedade fala alto quando não encontra espaço para ser ouvida. Aqui, a gente começa entendendo o que ela está tentando dizer.</p><button class="btn btn--ghost-dark acc__go" type="button" data-motivo="ansiedade">Quero conversar sobre isso</button></div>
+          <div class="signs"><h4>Sinais que merecem atenção</h4><ul><li>Preocupação constante e difícil de controlar</li><li>Aperto no peito, falta de ar ou coração acelerado sem causa clínica</li><li>Evitar lugares ou situações por medo</li><li>Sono leve, interrompido ou que não restaura</li></ul></div>
+        </div></div>
+      </li>
+      <li class="acc__item" data-reveal style="--d:1">
+        <h3><button class="acc__btn" type="button" aria-expanded="false" aria-controls="aj2" id="aj2b"><span class="n">02</span><span class="t">Transtornos do humor</span><span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="aj2" role="region" aria-labelledby="aj2b" hidden><div class="acc__cols">
+          <div><p>Depressão e transtorno bipolar mudam a forma de sentir, pensar e viver os dias. Não é falta de força de vontade. É uma condição de saúde que pede avaliação cuidadosa e acompanhamento contínuo.</p><button class="btn btn--ghost-dark acc__go" type="button" data-motivo="transtornos do humor">Quero conversar sobre isso</button></div>
+          <div class="signs"><h4>Sinais que merecem atenção</h4><ul><li>Tristeza ou vazio que persiste por semanas</li><li>Perda de interesse no que antes fazia sentido</li><li>Fases de muita energia, pouco sono e impulsividade</li><li>Mudanças no apetite, no sono e na concentração</li></ul></div>
+        </div></div>
+      </li>
+      <li class="acc__item" data-reveal style="--d:2">
+        <h3><button class="acc__btn" type="button" aria-expanded="false" aria-controls="aj3" id="aj3b"><span class="n">03</span><span class="t">Transtornos de personalidade</span><span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="aj3" role="region" aria-labelledby="aj3b" hidden><div class="acc__cols">
+          <div><p>Quando as emoções chegam em ondas muito fortes e as relações viram terreno instável, existe sofrimento real por trás. O cuidado é feito com paciência, sem rótulos e em parceria com a psicoterapia.</p><button class="btn btn--ghost-dark acc__go" type="button" data-motivo="transtornos de personalidade">Quero conversar sobre isso</button></div>
+          <div class="signs"><h4>Sinais que merecem atenção</h4><ul><li>Relações intensas e instáveis</li><li>Emoções que mudam rápido e com muita força</li><li>Sensação persistente de vazio</li><li>Padrões que se repetem e trazem sofrimento</li></ul></div>
+        </div></div>
+      </li>
+      <li class="acc__item" data-reveal style="--d:3">
+        <h3><button class="acc__btn" type="button" aria-expanded="false" aria-controls="aj4" id="aj4b"><span class="n">04</span><span class="t">Quadros psicóticos</span><span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="aj4" role="region" aria-labelledby="aj4b" hidden><div class="acc__cols">
+          <div><p>Perceber a realidade de um jeito diferente assusta a pessoa e quem está perto. Com acompanhamento próximo, a família ganha orientação e a pessoa, um lugar seguro para ser cuidada.</p><p class="acc__note">Em sintomas intensos ou risco imediato, procure um pronto-socorro ou ligue 192.</p><button class="btn btn--ghost-dark acc__go" type="button" data-motivo="quadros psicóticos">Quero conversar sobre isso</button></div>
+          <div class="signs"><h4>Sinais que merecem atenção</h4><ul><li>Ouvir ou ver coisas que outras pessoas não percebem</li><li>Desconfiança intensa e sem motivo claro</li><li>Pensamento ou fala desorganizados</li><li>Isolamento e mudança brusca de comportamento</li></ul></div>
+        </div></div>
+      </li>
+      <li class="acc__item" data-reveal style="--d:4">
+        <h3><button class="acc__btn" type="button" aria-expanded="false" aria-controls="aj5" id="aj5b"><span class="n">05</span><span class="t">Saúde mental infantil e TEA</span><span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="aj5" role="region" aria-labelledby="aj5b" hidden><div class="acc__cols">
+          <div><p>Cada criança tem seu tempo e seu jeito de estar no mundo. A avaliação olha para o desenvolvimento, a família e a escola, e ajuda a construir uma rede de apoio que faça sentido para ela.</p><button class="btn btn--ghost-dark acc__go" type="button" data-motivo="saúde mental infantil e TEA">Quero conversar sobre isso</button></div>
+          <div class="signs"><h4>Sinais que merecem atenção</h4><ul><li>Atraso ou perda de fala e de habilidades já conquistadas</li><li>Pouco contato visual ou pouco interesse em brincar junto</li><li>Interesses muito restritos, rotinas rígidas, sensibilidade a sons e texturas</li><li>Mudanças de comportamento em casa ou na escola</li></ul></div>
+        </div></div>
+      </li>
+      <li class="acc__item" data-reveal style="--d:5">
+        <h3><button class="acc__btn" type="button" aria-expanded="false" aria-controls="aj6" id="aj6b"><span class="n">06</span><span class="t">Cuidado de mães e crianças atípicas</span><span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="aj6" role="region" aria-labelledby="aj6b" hidden><div class="acc__cols">
+          <div><p>Quem cuida também precisa de cuidado. Maternar uma criança atípica pede força todos os dias, e esse cansaço tem nome, tem lugar e merece escuta, sem culpa.</p><button class="btn btn--ghost-dark acc__go" type="button" data-motivo="cuidado de mães e crianças atípicas">Quero conversar sobre isso</button></div>
+          <div class="signs"><h4>Sinais que merecem atenção</h4><ul><li>Cansaço que não passa com descanso</li><li>Culpa constante e sensação de estar sozinha</li><li>Tristeza ou ansiedade no pós-parto</li><li>Dificuldade de cuidar de si enquanto cuida de todos</li></ul></div>
+        </div></div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- 05 SOBRE -->
+<section class="sobre sec" id="sobre" data-nav="sobre" aria-labelledby="sobTitle">
+  <div class="wrap sobre__grid">
+    <div class="sobre__visual">
+      <div class="mask sobre__photo" data-reveal-mask><img src="assets/img/retrato-sentada-320.webp" srcset="assets/img/retrato-sentada-160.webp 160w, assets/img/retrato-sentada-320.webp 320w" sizes="(min-width:960px) 420px, 90vw" width="320" height="780" loading="lazy" decoding="async" alt="Dra. Ariane Cristina sentada de pernas cruzadas em uma poltrona de madeira clara, de blusa branca e calça jeans" data-parallax="0.05"></div>
+      <div class="mask sobre__plant" data-reveal-mask><img src="assets/img/plantas-200.webp" srcset="assets/img/plantas-200.webp 200w, assets/img/plantas-400.webp 400w" sizes="180px" width="400" height="870" loading="lazy" decoding="async" alt="Vasos de barro com uma zamioculca e um cacto ao lado de um puff de palha"></div>
+    </div>
+    <div class="sobre__text">
+      <p class="eyebrow" data-reveal><span class="num">05</span><span class="lbl">Sobre mim</span></p>
+      <div class="title-wrap" data-reveal><h2 class="title" id="sobTitle">Ciência que sabe <em>escutar</em>.</h2><svg class="hand" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 40 3, 90 3, 130 7 S 190 12, 198 5"/></svg></div>
+      <div data-reveal style="--d:1;margin-top:1.6rem">
+        <p class="first">Médica com experiência em urgência, Atenção Básica e saúde mental, com atuação no cuidado integral e humanizado. Experiência no acompanhamento de transtornos do humor, transtornos de personalidade, transtornos psicóticos, transtornos de ansiedade e outras condições psiquiátricas.</p>
+        <p>Em constante aprimoramento técnico-científico, com interesse especial em saúde mental infantil, Transtorno do Espectro Autista (TEA) e cuidado psicossocial, buscando oferecer uma assistência ética, individualizada e baseada em evidências científicas.</p>
+      </div>
+      <ul class="tags" data-reveal style="--d:2"><li>Urgência</li><li>Atenção Básica</li><li>Saúde mental</li><li>Saúde mental infantil</li><li>TEA</li><li>Cuidado psicossocial</li></ul>
+      <p class="sobre__cred" data-reveal style="--d:3"><span data-cred>Médica com atuação em saúde mental</span><span>Presencial e online</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- 06 VOZES DO CUIDADO -->
+<section class="vozes sec" id="vozes" data-nav="sobre" aria-labelledby="vozTitle">
+  <div class="wrap">
+    <div class="vozes__head">
+      <p class="eyebrow" data-reveal><span class="num">06</span><span class="lbl">Vozes do cuidado</span></p>
+      <div class="title-wrap" data-reveal><h2 class="title" id="vozTitle" style="text-align:center">O que eu levo para cada <em>encontro</em>.</h2></div>
+    </div>
+    <div class="car" id="car" role="region" aria-roledescription="carrossel" aria-label="Reflexões da Dra. Ariane Cristina sobre cuidado" tabindex="0">
+      <div class="car__track" id="carTrack" aria-live="off">
+        <div class="slide is-on" role="group" aria-roledescription="slide" aria-label="1 de 5"><blockquote><span class="q" aria-hidden="true">“</span><p class="ph"><span>Cuidar não é ter pressa de responder. É ter calma para entender.</span></p></blockquote><footer>Dra. Ariane Cristina</footer></div>
+        <div class="slide" role="group" aria-roledescription="slide" aria-label="2 de 5"><blockquote><span class="q" aria-hidden="true">“</span><p class="ph"><span>Nenhum diagnóstico é maior do que a pessoa que chega até mim.</span></p></blockquote><footer>Dra. Ariane Cristina</footer></div>
+        <div class="slide" role="group" aria-roledescription="slide" aria-label="3 de 5"><blockquote><span class="q" aria-hidden="true">“</span><p class="ph"><span>Mãe também precisa de colo. Pedir ajuda é um gesto de cuidado, não de fraqueza.</span></p></blockquote><footer>Dra. Ariane Cristina</footer></div>
+        <div class="slide" role="group" aria-roledescription="slide" aria-label="4 de 5"><blockquote><span class="q" aria-hidden="true">“</span><p class="ph"><span>Ciência e afeto não competem. No consultório, os dois sentam juntos.</span></p></blockquote><footer>Dra. Ariane Cristina</footer></div>
+        <div class="slide" role="group" aria-roledescription="slide" aria-label="5 de 5"><blockquote><span class="q" aria-hidden="true">“</span><p class="ph"><span>Cada criança tem seu tempo. Meu trabalho é escutar esse tempo, com ela e com a família.</span></p></blockquote><footer>Dra. Ariane Cristina</footer></div>
+      </div>
+      <div class="car__ctrl">
+        <button class="car__arrow" type="button" id="carPrev" aria-label="Reflexão anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <div class="car__dots" id="carDots"></div>
+        <button class="car__arrow" type="button" id="carNext" aria-label="Próxima reflexão"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+    <p class="car__note">Reflexões da médica sobre o cuidado. Este site não publica relatos de pacientes.</p>
+  </div>
+</section>
+
+<!-- 07 COMO FUNCIONA -->
+<section class="como sec" id="como-funciona" data-nav="como-funciona" aria-labelledby="comoTitle">
+  <div class="wrap">
+    <div class="como__head">
+      <div>
+        <p class="eyebrow" data-reveal><span class="num">07</span><span class="lbl">Como funciona</span></p>
+        <div class="title-wrap" data-reveal><h2 class="title" id="comoTitle">Do primeiro <em>oi</em> ao plano de cuidado.</h2><svg class="hand" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 40 3, 90 3, 130 7 S 190 12, 198 5"/></svg></div>
+      </div>
+      <p class="lead" data-reveal style="--d:1">Quatro passos, no seu ritmo. Você sabe o que esperar antes mesmo de chegar.</p>
+    </div>
+    <ol class="steps" id="steps">
+      <li class="steps__line" aria-hidden="true"></li>
+      <li class="step" data-reveal style="--d:1"><span class="step__n" aria-hidden="true">01</span><h3>Primeiro contato</h3><p>Você me chama pelo WhatsApp. Combinamos o melhor horário e a modalidade, presencial ou online.</p></li>
+      <li class="step" data-reveal style="--d:2"><span class="step__n" aria-hidden="true">02</span><h3>Primeira consulta</h3><p>Um encontro sem pressa. Escuto sua história, sua rotina, o que dói e o que sustenta você.</p></li>
+      <li class="step" data-reveal style="--d:3"><span class="step__n" aria-hidden="true">03</span><h3>Compreensão</h3><p>Organizo com você o que foi percebido. Quando preciso, peço exames ou converso com outros profissionais, sempre com sua autorização.</p></li>
+      <li class="step" data-reveal style="--d:4"><span class="step__n" aria-hidden="true">04</span><h3>Plano de cuidado</h3><p>Construímos juntos um plano individualizado, com acompanhamento próximo e ajustes ao longo do caminho.</p></li>
+    </ol>
+    <div class="modes" data-reveal>
+      <div class="mode"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 28s-8-8.2-8-14a8 8 0 0 1 16 0c0 5.8-8 14-8 14z"/><circle cx="16" cy="14" r="3"/></svg><span><strong>Presencial</strong> · <span data-endereco>[ENDEREÇO A CONFIRMAR]</span></span></div>
+      <div class="mode"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="7" width="22" height="15" rx="2"/><path d="M12 26h8M16 22v4"/></svg><span><strong>Online</strong> · teleconsulta segura</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 AGENDAMENTO -->
+<section class="agendar sec" id="agendar" data-nav="como-funciona" aria-labelledby="agTitle">
+  <div class="wrap agendar__grid">
+    <div class="agendar__intro">
+      <p class="eyebrow" data-reveal><span class="num">08</span><span class="lbl">Agendamento</span></p>
+      <div class="title-wrap" data-reveal><h2 class="title" id="agTitle">Sua mensagem, <em>pronta</em> para enviar.</h2><svg class="hand" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true" style="color:#D9CCBD"><path d="M2 9 C 40 3, 90 3, 130 7 S 190 12, 198 5"/></svg></div>
+      <p data-reveal style="--d:1;margin-top:1.6rem">Escolha as opções ao lado. O texto se monta sozinho e abre no WhatsApp, para você revisar antes de enviar.</p>
+      <p class="privacy" data-reveal style="--d:2"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Nenhum dado é guardado ou enviado por este site. Tudo acontece no seu aparelho, até você tocar em enviar no WhatsApp.</span></p>
+    </div>
+    <form class="panel" id="booking" data-reveal style="--d:1" novalidate>
+      <div class="field">
+        <label for="motivo">Motivo (opcional)</label>
+        <div class="select"><select id="motivo" name="motivo">
+          <option value="">Prefiro contar na conversa</option>
+          <option value="ansiedade">Ansiedade</option>
+          <option value="transtornos do humor">Transtornos do humor</option>
+          <option value="transtornos de personalidade">Transtornos de personalidade</option>
+          <option value="quadros psicóticos">Quadros psicóticos</option>
+          <option value="saúde mental infantil e TEA">Saúde mental infantil e TEA</option>
+          <option value="cuidado de mães e crianças atípicas">Cuidado de mães e crianças atípicas</option>
+        </select></div>
+      </div>
+      <div class="pair">
+        <fieldset class="field"><legend>Para quem é</legend><div class="chips">
+          <label class="chip"><input type="radio" name="para" value="eu" checked><span>Para mim</span></label>
+          <label class="chip"><input type="radio" name="para" value="filho"><span>Meu filho ou filha</span></label>
+        </div></fieldset>
+        <fieldset class="field"><legend>Tipo</legend><div class="chips">
+          <label class="chip"><input type="radio" name="tipo" value="primeira" checked><span>Primeira consulta</span></label>
+          <label class="chip"><input type="radio" name="tipo" value="retorno"><span>Retorno</span></label>
+        </div></fieldset>
+        <fieldset class="field"><legend>Modalidade</legend><div class="chips">
+          <label class="chip"><input type="radio" name="modalidade" value="presencial" checked><span>Presencial</span></label>
+          <label class="chip"><input type="radio" name="modalidade" value="online"><span>Online</span></label>
+        </div></fieldset>
+        <fieldset class="field"><legend>Turno</legend><div class="chips">
+          <label class="chip"><input type="radio" name="turno" value="manhã" checked><span>Manhã</span></label>
+          <label class="chip"><input type="radio" name="turno" value="tarde"><span>Tarde</span></label>
+        </div></fieldset>
+      </div>
+      <div class="preview" aria-live="polite"><small>Prévia da mensagem</small><p id="preview"></p></div>
+      <a class="btn" id="sendWa" href="https://wa.me/" target="_blank" rel="noopener">Abrir no WhatsApp<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </form>
+  </div>
+</section>
+
+<!-- 09 DÚVIDAS -->
+<section class="duvidas sec" id="duvidas" data-nav="duvidas" aria-labelledby="duvTitle">
+  <div class="wrap duvidas__grid">
+    <div>
+      <p class="eyebrow" data-reveal><span class="num">09</span><span class="lbl">Dúvidas frequentes</span></p>
+      <div class="title-wrap" data-reveal><h2 class="title" id="duvTitle">Perguntas que chegam <em>antes</em> da consulta.</h2><svg class="hand" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9 C 40 3, 90 3, 130 7 S 190 12, 198 5"/></svg></div>
+    </div>
+    <ul class="faq" id="faq" data-reveal style="--d:1">
+      <li><h3><button type="button" aria-expanded="false" aria-controls="f1" id="f1b">O atendimento online funciona como o presencial?<span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="f1" role="region" aria-labelledby="f1b" hidden><div><p>Sim. A teleconsulta segue as normas do Conselho Federal de Medicina, com a mesma ética e o mesmo sigilo da consulta presencial. Você só precisa de um lugar reservado e de uma conexão estável. Plataforma utilizada: <span class="mark">[CONFIRMAR]</span>.</p></div></div></li>
+      <li><h3><button type="button" aria-expanded="false" aria-controls="f2" id="f2b">Quanto tempo dura a consulta?<span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="f2" role="region" aria-labelledby="f2b" hidden><div><p>A primeira consulta costuma ser mais longa, porque preciso conhecer sua história com calma. Duração da primeira consulta: <span class="mark">[CONFIRMAR]</span>. Retornos: <span class="mark">[CONFIRMAR]</span>.</p></div></div></li>
+      <li><h3><button type="button" aria-expanded="false" aria-controls="f3" id="f3b">O que eu falar fica em sigilo?<span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="f3" role="region" aria-labelledby="f3b" hidden><div><p>Sim. O que é dito na consulta é protegido pelo sigilo médico, previsto no Código de Ética Médica. Informações só são compartilhadas com a sua autorização ou nas situações excepcionais previstas em lei. No atendimento de crianças, os responsáveis participam do cuidado, sempre com respeito à privacidade de cada um.</p></div></div></li>
+      <li><h3><button type="button" aria-expanded="false" aria-controls="f4" id="f4b">Atende por convênio?<span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="f4" role="region" aria-labelledby="f4b" hidden><div><p>Forma de atendimento: <span class="mark">[CONFIRMAR: particular e/ou convênios aceitos]</span>. Emissão de recibo para pedido de reembolso: <span class="mark">[CONFIRMAR]</span>. Os valores são informados diretamente pelo WhatsApp.</p></div></div></li>
+      <li><h3><button type="button" aria-expanded="false" aria-controls="f5" id="f5b">Como é a primeira consulta?<span class="acc__icon" aria-hidden="true"></span></button></h3>
+        <div class="acc__panel" id="f5" role="region" aria-labelledby="f5b" hidden><div><p>Conversamos sobre o que trouxe você até aqui, sua história, sua rotina e sua saúde de forma geral. Se tiver exames, receitas ou relatórios anteriores, traga. Para crianças, a primeira conversa costuma incluir os responsáveis, e relatórios da escola ou de outros profissionais ajudam muito.</p></div></div></li>
+    </ul>
+  </div>
+</section>
+</main>
+
+<!-- 10 RODAPÉ -->
+<footer class="footer" id="rodape">
+  <div class="wrap">
+    <p class="eyebrow" style="color:#D9CCBD"><span class="num">10</span><span class="lbl">Contato</span></p>
+    <p class="footer__big">Acolhimento, ciência<br>e <em>cuidado</em>.</p>
+    <div class="footer__grid">
+      <div><h3>Responsável técnica</h3><p>Dra. Ariane Cristina</p><p data-cred>Médica com atuação em saúde mental</p></div>
+      <div><h3>Atendimento</h3><p>Presencial e online</p><p data-endereco>[ENDEREÇO A CONFIRMAR]</p></div>
+      <div><h3>Redes</h3><p><a data-ig href="https://www.instagram.com/dra.arianecristina/" target="_blank" rel="noopener">@dra.arianecristina</a></p><p><a data-wa href="https://wa.me/" target="_blank" rel="noopener">WhatsApp</a></p></div>
+    </div>
+    <p class="alert" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.2v.1"/></svg><span>Este site não substitui atendimento de urgência. Em crise, ligue <strong>188 (CVV)</strong> ou <strong>192 (SAMU)</strong>.</span></p>
+    <div class="footer__bottom">
+      <span>© <span id="year">2026</span> Dra. Ariane Cristina. Conteúdo informativo, conforme a Resolução CFM 2.336/2023.</span>
+      <span><button class="linkbtn" type="button" id="tourBtn">Fazer o tour</button> · <a href="#inicio">Voltar ao topo</a></span>
+    </div>
+  </div>
+</footer>
+
+<a class="fab" id="fab" data-wa href="https://wa.me/" target="_blank" rel="noopener" aria-label="Conversar com a Dra. Ariane pelo WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-.8.8c-1-.4-1.6-1-2-2l.8-.8-1-2z"/></svg></a>
+
+<div class="tour" id="tour" hidden>
+  <div class="tour__catch"></div>
+  <div class="tour__spot" id="tourSpot"></div>
+  <div class="tour__card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle" aria-describedby="tourText">
+    <span class="tour__arrow" aria-hidden="true"></span>
+    <p class="tour__count" id="tourCount">1 de 5</p>
+    <h2 id="tourTitle">Menu</h2>
+    <p id="tourText"></p>
+    <div class="tour__btns">
+      <button type="button" class="skip-t" id="tourSkip">Pular</button>
+      <button type="button" class="btn btn--ghost-dark" id="tourBack">Voltar</button>
+      <button type="button" class="btn" id="tourNext">Próximo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (s, c = document) => c.querySelector(s);
+  const $$ = (s, c = document) => [...c.querySelectorAll(s)];
+  const root = document.documentElement;
+  root.classList.add("js");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- dados ---------- */
+  const num = String(WHATSAPP).replace(/\D/g, "");
+  const waLink = (msg) => `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+  const crmTxt = CRM.trim() || "CRM [CONFIRMAR]";
+  const cred = RQE.trim() ? `Psiquiatra · ${crmTxt} · RQE ${RQE.trim()}` : `Médica com atuação em saúde mental · ${crmTxt}`;
+  const end = ENDERECO.trim() || "[ENDEREÇO A CONFIRMAR]";
+  const ig = String(INSTAGRAM).replace(/^@/, "");
+  const MSG_GERAL = "Olá, Dra. Ariane. Vim pelo site e gostaria de informações sobre o atendimento.";
+  $$("[data-cred]").forEach(el => el.textContent = cred);
+  $$("[data-endereco]").forEach(el => el.textContent = end);
+  $$("[data-ig]").forEach(el => { el.href = `https://www.instagram.com/${ig}/`; el.textContent = "@" + ig; });
+  $$("[data-wa]").forEach(el => el.href = waLink(MSG_GERAL));
+  $("#year").textContent = new Date().getFullYear();
+  try {
+    const sc = $("#schema"), data = JSON.parse(sc.textContent);
+    data.description = cred + ". Saúde mental de mulheres, mães e crianças atípicas.";
+    if (num) data.telephone = "+" + num;
+    if (ENDERECO.trim()) data.address.streetAddress = ENDERECO.trim();
+    data.sameAs = [`https://www.instagram.com/${ig}/`];
+    if (!RQE.trim()) delete data.medicalSpecialty;
+    sc.textContent = JSON.stringify(data);
+  } catch (e) { /* mantém o JSON-LD estático */ }
+  // MODO_DEPOIMENTOS existe apenas como trava documentada: mesmo se alterado, nenhum relato de paciente é renderizado.
+  if (MODO_DEPOIMENTOS !== false) $("#vozes").dataset.mode = "reflexoes";
+
+  /* ---------- navbar ---------- */
+  const nav = $("#nav");
+  let solid = null;
+  const onScrollNav = () => {
+    const s = scrollY > 80;
+    if (s !== solid) { solid = s; nav.classList.toggle("is-solid", s); }
+  };
+  onScrollNav();
+  addEventListener("scroll", onScrollNav, { passive: true });
+
+  const links = $$("#navLinks a");
+  const secObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const key = e.target.dataset.nav;
+      links.forEach(a => {
+        const on = a.dataset.link === key;
+        a.classList.toggle("is-active", on);
+        on ? a.setAttribute("aria-current", "location") : a.removeAttribute("aria-current");
+      });
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  $$("[data-nav]").forEach(s => secObs.observe(s));
+
+  /* ---------- menu celular ---------- */
+  const burger = $("#burger"), menu = $("#menu"), menuLinks = $$("a", menu);
+  const setMenu = (open) => {
+    menu.classList.toggle("is-open", open);
+    nav.classList.toggle("menu-open", open);
+    menu.setAttribute("aria-hidden", String(!open));
+    burger.setAttribute("aria-expanded", String(open));
+    burger.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+    menuLinks.forEach(a => a.tabIndex = open ? 0 : -1);
+    document.body.style.overflow = open ? "hidden" : "";
+    if (open) setTimeout(() => menuLinks[0].focus({ preventScroll: true }), 300);
+  };
+  burger.addEventListener("click", () => setMenu(!menu.classList.contains("is-open")));
+  menuLinks.forEach(a => a.addEventListener("click", () => setMenu(false)));
+  document.addEventListener("keydown", e => {
+    if (!menu.classList.contains("is-open")) return;
+    if (e.key === "Escape") { setMenu(false); burger.focus(); }
+    if (e.key === "Tab") {
+      const f = [burger, ...menuLinks], i = f.indexOf(document.activeElement);
+      if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+  matchMedia("(min-width:1120px)").addEventListener("change", e => { if (e.matches) setMenu(false); });
+
+  /* ---------- 01 gradient mesh ---------- */
+  const cv = $("#mesh"), ctx = cv.getContext("2d", { alpha: false });
+  const blobs = [
+    { c: "168,106,78", a: .62, r: .62, x: .18, y: .28, ax: .14, ay: .10, s: .00011, p: 0 },   // terracota
+    { c: "222,212,198", a: .20, r: .50, x: .78, y: .22, ax: .12, ay: .14, s: .00009, p: 2 },  // linho
+    { c: "232,225,214", a: .14, r: .46, x: .62, y: .86, ax: .16, ay: .08, s: .00013, p: 4 },  // areia
+    { c: "181,18,91",   a: .30, r: .38, x: .88, y: .70, ax: .10, ay: .12, s: .00010, p: 1 },  // sopro de borgonha
+    { c: "138,106,87",  a: .55, r: .66, x: .30, y: .90, ax: .12, ay: .10, s: .00008, p: 3 }   // marrom claro
+  ];
+  let W = 0, H = 0, meshOn = true, raf = 0;
+  const size = () => {
+    const r = cv.getBoundingClientRect();
+    W = cv.width = Math.max(64, Math.round(r.width / 6));
+    H = cv.height = Math.max(64, Math.round(r.height / 6));
+  };
+  const draw = (t) => {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "#4A342A"; ctx.fillRect(0, 0, W, H);
+    const m = Math.max(W, H);
+    for (const b of blobs) {
+      const x = (b.x + Math.sin(t * b.s + b.p) * b.ax) * W;
+      const y = (b.y + Math.cos(t * b.s * 1.3 + b.p) * b.ay) * H;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, b.r * m);
+      g.addColorStop(0, `rgba(${b.c},${b.a})`);
+      g.addColorStop(1, `rgba(${b.c},0)`);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+  };
+  const loop = (t) => { draw(t); raf = meshOn ? requestAnimationFrame(loop) : 0; };
+  requestAnimationFrame(() => { size(); draw(9000); });
+  if (!reduce) {
+    new IntersectionObserver(([e]) => {
+      meshOn = e.isIntersecting && !document.hidden;
+      if (meshOn && !raf) raf = requestAnimationFrame(loop);
+    }).observe(cv);
+    document.addEventListener("visibilitychange", () => {
+      meshOn = !document.hidden && scrollY < innerHeight * 1.2;
+      if (meshOn && !raf) raf = requestAnimationFrame(loop);
+    });
+  }
+  let rT; addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => { size(); draw(performance.now() + 9000); }, 150); });
+
+  /* ---------- 02 manifesto ---------- */
+  const phrases = $$("#rotator p");
+  phrases.forEach(p => {
+    let i = 0;
+    p.innerHTML = p.dataset.phrase.split("|").map((chunk, k) =>
+      chunk.split(/(\s+)/).map(w => w.trim() ? `<span class="w"><span style="--i:${i++}">${k % 2 ? "<em>" + w + "</em>" : w}</span></span>` : " ").join("")
+    ).join("");
+  });
+  let pi = 0, pTimer = 0;
+  phrases[0].classList.add("is-on");
+  const nextPhrase = () => {
+    const cur = phrases[pi]; pi = (pi + 1) % phrases.length;
+    cur.classList.remove("is-on"); cur.classList.add("is-out");
+    setTimeout(() => cur.classList.remove("is-out"), 900);
+    phrases[pi].classList.add("is-on");
+  };
+  if (!reduce) {
+    new IntersectionObserver(([e]) => {
+      clearInterval(pTimer);
+      if (e.isIntersecting) pTimer = setInterval(nextPhrase, 4000);
+    }).observe($("#rotator"));
+  }
+
+  /* ---------- revelações + parallax ---------- */
+  const revObs = new IntersectionObserver(entries => entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add("is-in"); revObs.unobserve(e.target); }
+  }), { rootMargin: "0px 0px -8% 0px", threshold: .08 });
+  $$("[data-reveal],[data-reveal-mask],#steps").forEach(el => {
+    if (el.hasAttribute("data-reveal-mask")) el.classList.add("mask");
+    revObs.observe(el);
+  });
+  const par = $$("[data-parallax]");
+  let ticking = false;
+  const parallax = () => {
+    ticking = false;
+    const vh = innerHeight;
+    for (const img of par) {
+      const r = img.parentElement.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > vh) continue;
+      const k = parseFloat(img.dataset.parallax);
+      const off = ((r.top + r.height / 2) - vh / 2) * -k;
+      img.style.transform = `translate3d(0,${(off - r.height * .06).toFixed(1)}px,0)`;
+    }
+  };
+  if (!reduce) {
+    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(parallax); } }, { passive: true });
+    parallax();
+  }
+
+  /* ---------- accordions ---------- */
+  const accordion = (container, single) => {
+    const btns = $$("button[aria-controls]", container);
+    const set = (b, open) => { b.setAttribute("aria-expanded", String(open)); $("#" + b.getAttribute("aria-controls")).hidden = !open; };
+    btns.forEach(b => b.addEventListener("click", () => {
+      const open = b.getAttribute("aria-expanded") !== "true";
+      if (single) btns.forEach(o => o !== b && set(o, false));
+      set(b, open);
+    }));
+    return { open: (i) => { btns.forEach((b, k) => set(b, k === i)); } };
+  };
+  accordion($("#ajudaAcc"), true);
+  accordion($("#faq"), true);
+
+  /* ---------- 06 carrossel ---------- */
+  const slides = $$(".slide"), dotsWrap = $("#carDots"), car = $("#car"), track = $("#carTrack");
+  let si = 0, cTimer = 0, paused = false, userDriven = false;
+  slides.forEach((_, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("aria-label", `Reflexão ${i + 1} de ${slides.length}`);
+    b.addEventListener("click", () => { userDriven = true; go(i); });
+    dotsWrap.appendChild(b);
+  });
+  const dots = $$("button", dotsWrap);
+  const go = (n) => {
+    const prev = si; si = (n + slides.length) % slides.length;
+    slides.forEach((s, i) => {
+      s.classList.toggle("is-on", i === si);
+      s.classList.toggle("is-prev", i === prev && i !== si);
+      s.setAttribute("aria-hidden", String(i !== si));
+    });
+    dots.forEach((d, i) => d.setAttribute("aria-current", String(i === si)));
+    track.setAttribute("aria-live", userDriven || paused ? "polite" : "off");
+  };
+  const play = () => { clearInterval(cTimer); if (!reduce && !paused) cTimer = setInterval(() => go(si + 1), 6000); };
+  $("#carPrev").addEventListener("click", () => { userDriven = true; go(si - 1); play(); });
+  $("#carNext").addEventListener("click", () => { userDriven = true; go(si + 1); play(); });
+  car.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { userDriven = true; go(si + 1); }
+    if (e.key === "ArrowLeft") { userDriven = true; go(si - 1); }
+  });
+  const pause = (v) => { paused = v; v ? clearInterval(cTimer) : play(); };
+  car.addEventListener("mouseenter", () => pause(true));
+  car.addEventListener("mouseleave", () => { if (!car.contains(document.activeElement)) pause(false); });
+  car.addEventListener("focusin", () => pause(true));
+  car.addEventListener("focusout", e => { if (!car.contains(e.relatedTarget)) pause(false); });
+  go(0);
+  new IntersectionObserver(([e]) => { if (e.isIntersecting) play(); else clearInterval(cTimer); }).observe(car);
+
+  /* ---------- 08 agendamento ---------- */
+  const form = $("#booking"), preview = $("#preview"), send = $("#sendWa"), motivo = $("#motivo");
+  const buildMsg = () => {
+    const f = new FormData(form);
+    const tipo = f.get("tipo") === "retorno" ? "um retorno" : "uma primeira consulta";
+    const para = f.get("para") === "filho" ? "para meu filho ou filha" : "para mim";
+    const mod = f.get("modalidade") === "online" ? "online" : "presencial";
+    const mot = f.get("motivo");
+    return `Olá, Dra. Ariane. Gostaria de agendar ${tipo} ${para}, na modalidade ${mod}, de preferência no turno da ${f.get("turno")}.\n` +
+      (mot ? `O motivo é: ${mot}.` : "Prefiro contar o motivo durante a conversa.") +
+      `\nPoderia me informar os horários disponíveis?`;
+  };
+  const update = () => { const m = buildMsg(); preview.textContent = m; send.href = waLink(m); };
+  form.addEventListener("input", update); form.addEventListener("change", update);
+  form.addEventListener("submit", e => e.preventDefault());
+  update();
+  $$("[data-motivo]").forEach(b => b.addEventListener("click", () => {
+    motivo.value = b.dataset.motivo; update();
+    $("#agendar").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    setTimeout(() => { motivo.focus({ preventScroll: true }); motivo.classList.remove("flash"); void motivo.offsetWidth; motivo.classList.add("flash"); }, reduce ? 0 : 700);
+  }));
+
+  /* ---------- botão flutuante ---------- */
+  const fab = $("#fab");
+  const fabCheck = () => fab.classList.toggle("is-on", scrollY > innerHeight * .6);
+  fabCheck(); addEventListener("scroll", fabCheck, { passive: true });
+
+  /* ---------- tour guiado ---------- */
+  const TOUR_KEY = "ac_tour_visto_v1";
+  const vis = (el) => el && el.getClientRects().length > 0 && getComputedStyle(el).display !== "none";
+  const steps = [
+    { t: () => vis($("#navLinks")) ? $("#navLinks") : $("#burger"), h: "O menu", p: "Navegue pelas seções por aqui.", fixed: true },
+    { t: () => $("#navCta"), h: "Agendar", p: "Marque sua consulta em poucos toques.", fixed: true },
+    { t: () => $("#ajudaAcc"), h: "Como posso te ajudar", p: "Toque em um tema para entender como funciona o cuidado." },
+    { t: () => $("#booking"), h: "Painel de agendamento", p: "Escolha as opções e a mensagem chega pronta no WhatsApp." },
+    { t: () => $("#fab"), h: "Fale comigo", p: "Se preferir, fale direto comigo.", fixed: true, before: () => fab.classList.add("is-on") }
+  ];
+  const tour = $("#tour"), spot = $("#tourSpot"), card = $("#tourCard");
+  const tCount = $("#tourCount"), tTitle = $("#tourTitle"), tText = $("#tourText");
+  const bBack = $("#tourBack"), bNext = $("#tourNext"), bSkip = $("#tourSkip");
+  let ti = -1, lastFocus = null, tRaf = 0;
+  const place = () => {
+    tRaf = 0;
+    if (ti < 0) return;
+    const el = steps[ti].t(); if (!el) return;
+    const vw = innerWidth, vh = innerHeight, pad = 10;
+    const r = el.getBoundingClientRect();
+    const x = Math.max(6, r.left - pad), y = Math.max(6, r.top - pad);
+    const w = Math.min(vw - 12, r.right + pad) - x, h = Math.min(vh - 12, r.bottom + pad) - y;
+    Object.assign(spot.style, { transform: `translate(${x}px,${y}px)`, width: Math.max(0, w) + "px", height: Math.max(0, h) + "px" });
+    const cw = card.offsetWidth, ch = card.offsetHeight, gap = 18;
+    const cx = x + w / 2, cy = y + h / 2;
+    let side = "bottom", top, left = Math.min(Math.max(16, cx - cw / 2), vw - cw - 16);
+    if (y + h + gap + ch < vh - 8) top = y + h + gap;
+    else if (y - gap - ch > 8) { side = "top"; top = y - gap - ch; }
+    else if (x - gap - cw > 8) { side = "left"; left = x - gap - cw; }
+    else if (x + w + gap + cw < vw - 8) { side = "right"; left = x + w + gap; }
+    else { side = "none"; top = Math.max(8, vh - ch - 16); }
+    if (side === "left" || side === "right") top = Math.min(Math.max(16, cy - ch / 2), vh - ch - 16);
+    card.dataset.side = side;
+    card.style.left = left + "px"; card.style.top = top + "px";
+    card.style.setProperty("--ax", Math.min(Math.max(22, cx - left), cw - 22) + "px");
+    card.style.setProperty("--ay", Math.min(Math.max(22, cy - top), ch - 22) + "px");
+  };
+  const schedule = () => { if (!tRaf) tRaf = requestAnimationFrame(place); };
+  const show = (i) => {
+    ti = i; const s = steps[i];
+    if (s.before) s.before();
+    tCount.textContent = `${i + 1} de ${steps.length}`;
+    tTitle.textContent = s.h; tText.textContent = s.p;
+    bBack.disabled = i === 0;
+    bNext.textContent = i === steps.length - 1 ? "Concluir" : "Próximo";
+    card.classList.remove("is-on");
+    const el = s.t();
+    if (!s.fixed && el) {
+      const r = el.getBoundingClientRect();
+      el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: r.height > innerHeight * .8 ? "start" : "center" });
+    }
+    setTimeout(() => { place(); card.classList.add("is-on"); bNext.focus({ preventScroll: true }); }, s.fixed || reduce ? 60 : 650);
+  };
+  const openTour = () => {
+    if (ti >= 0) return;
+    if (menu.classList.contains("is-open")) setMenu(false);
+    lastFocus = document.activeElement;
+    tour.hidden = false;
+    addEventListener("scroll", schedule, { passive: true });
+    addEventListener("resize", schedule);
+    show(0);
+  };
+  const closeTour = () => {
+    if (ti < 0) return;
+    ti = -1; tour.hidden = true; card.classList.remove("is-on");
+    removeEventListener("scroll", schedule); removeEventListener("resize", schedule);
+    fabCheck();
+    try { localStorage.setItem(TOUR_KEY, "1"); } catch (e) { /* armazenamento indisponível */ }
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+  };
+  bNext.addEventListener("click", () => ti < steps.length - 1 ? show(ti + 1) : closeTour());
+  bBack.addEventListener("click", () => ti > 0 && show(ti - 1));
+  bSkip.addEventListener("click", closeTour);
+  $("#tourBtn").addEventListener("click", openTour);
+  document.addEventListener("keydown", e => {
+    if (ti < 0) return;
+    if (e.key === "Escape") { e.preventDefault(); closeTour(); }
+    if (e.key === "Tab") {
+      const f = [bSkip, bBack, bNext].filter(b => !b.disabled), i = f.indexOf(document.activeElement);
+      e.preventDefault();
+      f[(i + (e.shiftKey ? -1 : 1) + f.length) % f.length].focus();
+    }
+  });
+  let seen = false;
+  try { seen = localStorage.getItem(TOUR_KEY) === "1"; } catch (e) { seen = true; }
+  if (!seen) {
+    const start = () => setTimeout(openTour, 1500);
+    document.readyState === "complete" ? start() : addEventListener("load", start, { once: true });
+  }
+})();
+</script>
+</body>
+</html>
