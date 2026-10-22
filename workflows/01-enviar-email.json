@@ -104,7 +104,7 @@
           },
           "conditions": [
             {
-              "id": "dbb35077-f3c1-4336-a30c-9affce56998a",
+              "id": "9d57e226-49df-4017-80a9-4d40cf55864f",
               "leftValue": "={{ $json.send }}",
               "rightValue": "",
               "operator": {
@@ -138,7 +138,7 @@
           },
           "conditions": [
             {
-              "id": "a2e9a3c8-2d6e-4993-be38-79a7052895fb",
+              "id": "ce89dc9f-eca9-4672-843d-3d7fa9d0172e",
               "leftValue": "={{ $json.needs_verification }}",
               "rightValue": "",
               "operator": {
@@ -237,7 +237,7 @@
           },
           "conditions": [
             {
-              "id": "fd92e986-339a-4358-8831-1e61f57e1f1b",
+              "id": "ab5ee11b-e4f6-4bc0-a9a6-cd230000ce8b",
               "leftValue": "={{ $json.already_sent }}",
               "rightValue": "",
               "operator": {

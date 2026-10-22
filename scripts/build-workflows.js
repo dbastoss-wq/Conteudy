@@ -192,14 +192,17 @@ function wfProcessar() {
     subTrigger(),
     code('Configuração', "return [{ json: { r: $input.first().json.settings } }];"),
     http('Ler mensagem', { url: `=${GMAIL}/messages/{{ $('Entrada').first().json.gmail_message_id }}`, cred: 'gmail', retry: true, query: { format: 'full' } }),
-    code('Normalizar', `${lib('email')}
+    code('Normalizar', `${lib('email', 'risk')}
 ${HTTP_RESULT}
 const s = $('Configuração').first().json.r;
 const r = httpResult($input.first().json);
 if (!r.ok) return [{ json: { route: 'erro_leitura', error: r.error } }];
 const msg = email.normalizeGmailMessage(r.body);
 const L = s.limits || {};
-return [{ json: { route: 'ok', msg, claim: { gmail_message_id: msg.gmail_message_id, gmail_thread_id: msg.gmail_thread_id,
+// Risco é detectado antes de tudo: nem mensagens com tentativas esgotadas deixam de gerar alerta.
+const riskTerms = (s.psiquiatria || {}).termos_risco || [];
+const riskCheck = risk.detectRisk([msg.subject, msg.body_new_text || msg.body_text].join(' '), riskTerms);
+return [{ json: { route: 'ok', msg, risk: riskCheck, claim: { gmail_message_id: msg.gmail_message_id, gmail_thread_id: msg.gmail_thread_id,
   rfc822_message_id: msg.rfc822_message_id, from_email: msg.from_email, from_name: msg.from_name, to: msg.to,
   subject: msg.subject, body_text: msg.body_text, internal_date: msg.internal_date, max_attempts: L.max_attempts || 3, lock_minutes: L.lock_minutes || 15 } } }];`),
     route('Leitura ok?', 'ok'),
@@ -222,9 +225,18 @@ return [{ json: { route, claim: c, labels: labels.filter(Boolean) } }];`),
     sql('Descartar mensagem', 'SELECT agente.finish_message($1::jsonb) AS r',
       "{ message_id: $json.claim.message_id, status: 'descartada', error: 'tentativas_esgotadas', workflow: 'processar_mensagem', execution_id: $execution.id }"),
     http('Rótulos (erro)', { method: 'POST', url: `=${GMAIL}/messages/{{ $('Entrada').first().json.gmail_message_id }}/modify`, cred: 'gmail', retry: true, body: "={{ JSON.stringify({ addLabelIds: $('Avaliar reivindicação').first().json.labels }) }}" }),
-    code('Montar alerta', `const s = $('Configuração').first().json.r;
+    code('Montar alerta', `${lib('policy')}
+const s = $('Configuração').first().json.r;
 const m = $('Normalizar').first().json.msg;
+const rk = $('Normalizar').first().json.risk;
 const c = $('Avaliar reivindicação').first().json.claim;
+if (rk && (rk.risk === 'possivel' || rk.risk === 'alto')) {
+  // Mensagem com risco nunca some em silêncio: alerta urgente com a mesma chave do protocolo de risco.
+  const pr = policy.riskPolicy(s, m, { conversation: { id: c.conversation_id } }, rk, { internal: true, source: 'termos' });
+  return [{ json: { settings: s, kind: 'alerta_risco', idempotency_key: c.message_id + ':alerta_risco', conversation_id: c.conversation_id,
+    source_message_id: c.message_id, to: pr.alert.to, subject: pr.alert.subject,
+    body_text: pr.alert.body_text + '\\n\\nAtenção: o agente não conseguiu concluir o processamento desta mensagem. Responda manualmente.' } }];
+}
 return [{ json: { settings: s, kind: 'alerta', idempotency_key: 'alerta:esgotada:' + c.message_id, to: [s.alert_email || s.escalation.contact_email],
   subject: '[Agente] Mensagem não processada após ' + c.attempts + ' tentativas: ' + (m.subject || '(sem assunto)'),
   body_text: 'O agente não conseguiu processar uma mensagem e parou de tentar.\\n\\nRemetente: ' + m.from_email + '\\nAssunto: ' + m.subject +
@@ -233,14 +245,19 @@ return [{ json: { settings: s, kind: 'alerta', idempotency_key: 'alerta:esgotada
     execWf('Enviar alerta', WF.enviar),
     sql('Carregar contexto', 'SELECT agente.get_context($1::jsonb) AS r',
       "{ conversation_id: $('Avaliar reivindicação').first().json.claim.conversation_id, message_id: $('Avaliar reivindicação').first().json.claim.message_id, timezone: $('Configuração').first().json.r.timezone }"),
-    code('Filtrar', `${lib('filters')}
+    code('Filtrar', `${lib('filters', 'risk', 'policy')}
 const s = $('Configuração').first().json.r;
 const msg = $('Normalizar').first().json.msg;
+const rk = $('Normalizar').first().json.risk;
 const ctx = $input.first().json.r;
-const f = filters.shouldSkip(msg, s, ctx);
+const hasRisk = risk.isRisk(rk);
+const f = filters.shouldSkip(msg, s, ctx, hasRisk);
+// Risco pelos termos: protocolo fixo sem chamar a IA (alerta mais rápido e menos dado sensível enviado).
+if (!f.skip && hasRisk) return [{ json: { route: 'risco', ctx, decision: null, policy: policy.riskPolicy(s, msg, ctx, rk, { internal: !!f.internal, source: 'termos' }), skip_reason: null } }];
+const area = policy.resolveArea(s, msg, ctx, null);
 const route = !f.skip ? 'ia' : (f.escalate ? 'escalar' : 'ignorar');
-return [{ json: { route, ctx, decision: null, policy: f.skip ? { final: route === 'escalar' ? 'escalate' : 'none', reasons: [f.reason], ack_text: null } : null,
-  skip_reason: f.reason } }];`),
+return [{ json: { route, ctx, decision: null, policy: f.skip ? { final: route === 'escalar' ? 'escalate' : 'none', area, destino: area === 'psiquiatria' ? 'administrativo' : 'padrao',
+  include_body: area !== 'psiquiatria', reasons: [f.reason], ack_text: null } : null, skip_reason: f.reason, internal: !!f.internal } }];`),
     route('Usar IA?', 'ia'),
     code('Montar requisição IA', `${lib('ai')}
 ${PROMPT}
@@ -263,11 +280,48 @@ if (!r.ok) {
 }
 const parsed = ai.parseResponse(r.body);
 if (!parsed.ok) return [{ json: { route: 'escalar', ctx, decision: null, policy: { final: 'escalate', reasons: [parsed.error], ack_text: null } } }];
-const policy = policy_ = policy.applyPolicy(parsed.decision, s, msg, ctx);
-const route = { reply: 'responder', escalate: 'escalar', none: 'ignorar' }[policy_.final];
+const policy = policy_ = policy.applyPolicy(parsed.decision, s, msg, ctx, { risk: $('Normalizar').first().json.risk, internal: !!$('Filtrar').first().json.internal });
+const route = { reply: 'responder', escalate: 'escalar', none: 'ignorar', risk: 'risco' }[policy_.final];
 return [{ json: { route, ctx, decision: parsed.decision, policy: policy_, usage: parsed.usage, model: parsed.model, skip_reason: route === 'ignorar' ? 'ia_nao_responder' : null } }];`
       .replace('const policy = policy_ = policy.applyPolicy', 'const policy_ = policy.applyPolicy')),
     code('Estado', 'return [{ json: $input.first().json }];'),
+    route('Risco?', 'risco'),
+    code('Montar alerta de risco', `const s = $('Configuração').first().json.r;
+const st = $('Estado').first().json;
+const c = $('Avaliar reivindicação').first().json.claim;
+// Sem deduplicação por hora: uma chave por mensagem; mensagens diferentes geram alertas diferentes.
+return [{ json: { settings: s, kind: 'alerta_risco', idempotency_key: c.message_id + ':alerta_risco', conversation_id: c.conversation_id,
+  source_message_id: c.message_id, to: st.policy.alert.to, subject: st.policy.alert.subject, body_text: st.policy.alert.body_text } }];`),
+    execWf('Enviar alerta de risco', WF.enviar),
+    code('Montar resposta de risco', `${lib('email')}
+const st = $('Estado').first().json;
+if (!st.policy.reply_text) return [];
+const s = $('Configuração').first().json.r;
+const msg = $('Normalizar').first().json.msg;
+const c = $('Avaliar reivindicação').first().json.claim;
+return [{ json: { settings: s, kind: 'resposta_risco', idempotency_key: c.message_id + ':resposta_risco', conversation_id: c.conversation_id, source_message_id: c.message_id,
+  to: [msg.reply_to || msg.from_email], subject: email.replySubject(msg.subject), body_text: st.policy.reply_text, thread_id: msg.gmail_thread_id,
+  in_reply_to: msg.rfc822_message_id, references: [msg.references, msg.rfc822_message_id].filter(Boolean).join(' ') } }];`),
+    execWf('Enviar resposta de risco', WF.enviar, { alwaysOutputData: true }),
+    code('Após risco', `const s = $('Configuração').first().json.r;
+const st = $('Estado').first().json;
+const c = $('Avaliar reivindicação').first().json.claim;
+const alert = $('Enviar alerta de risco').first().json;
+const reply = $input.first().json || {};
+const ok = alert.status === 'enviado';
+const ids = s.gmail_label_ids || {};
+return [{ json: { sent: ok, labels: [ids.processado, ids.escalado, ids.prioridade].filter(Boolean), finish: {
+  message_id: c.message_id, status: ok ? 'escalada' : 'falhou', intent: 'risco_' + st.policy.categoria,
+  error: ok ? null : 'alerta_risco_' + alert.status, workflow: 'processar_mensagem', execution_id: $execution.id,
+  conversation: ok ? { status: 'escalada', summary: 'Mensagem com sinal de risco encaminhada à equipe clínica.', next_action: 'Contato da equipe clínica',
+    last_intent: 'risco_' + st.policy.categoria, area: st.policy.area, risk_level: st.policy.risk_level } : undefined,
+  detail: { action: 'alerta_risco', reasons: st.policy.reasons, alerta: alert, resposta: reply.status ? reply : null } } } }];`),
+    ifTrue('Alerta enviado?', '$json.sent'),
+    http('Rótulos (risco)', { method: 'POST', url: `=${GMAIL}/messages/{{ $('Entrada').first().json.gmail_message_id }}/modify`, cred: 'gmail', retry: true, body: "={{ JSON.stringify({ addLabelIds: $json.labels }) }}" }),
+    sql('Registrar alerta de risco', 'SELECT agente.log($1::jsonb)',
+      "{ workflow: 'processar_mensagem', execution_id: $execution.id, entity_type: 'message', entity_id: $('Avaliar reivindicação').first().json.claim.message_id, action: 'alerta_risco', status: 'enviado', detail: { reasons: $('Estado').first().json.policy.reasons } }"),
+    sql('Finalizar risco', 'SELECT agente.finish_message($1::jsonb) AS r', "$('Após risco').first().json.finish"),
+    sql('Finalizar falha de risco', 'SELECT agente.finish_message($1::jsonb) AS r', "$('Após risco').first().json.finish"),
     route('Responder?', 'responder'),
     route('Escalar?', 'escalar'),
     route('Falhou?', 'falhou'),
@@ -289,7 +343,7 @@ return [{ json: { sent, labels: [(s.gmail_label_ids || {}).processado].filter(Bo
   message_id: c.message_id, status: sent ? 'concluida' : 'falhou', intent: d.intent || null,
   error: sent ? null : 'envio_' + $input.first().json.status, workflow: 'processar_mensagem', execution_id: $execution.id,
   conversation: sent ? { status: d.action === 'perguntar' || d.action === 'enviar_link_agendamento' ? 'aguardando_contato' : 'aberta',
-    summary: d.summary, next_action: d.next_action, last_intent: d.intent } : undefined,
+    summary: d.summary, next_action: d.next_action, last_intent: d.intent, area: st.policy && st.policy.area } : undefined,
   detail: { policy: st.policy && st.policy.reasons, link: st.policy && st.policy.link, model: st.model, usage: st.usage, outbound: $input.first().json } } } }];`),
     ifTrue('Resposta enviada?', '$json.sent'),
     http('Rótulos (concluída)', { method: 'POST', url: `=${GMAIL}/messages/{{ $('Entrada').first().json.gmail_message_id }}/modify`, cred: 'gmail', retry: true, body: "={{ JSON.stringify({ addLabelIds: $json.labels }) }}" }),
@@ -301,6 +355,13 @@ const st = $('Estado').first().json;
 const c = $('Avaliar reivindicação').first().json.claim;
 const d = st.decision || {};
 const reasons = ((st.policy && st.policy.reasons) || []).join(', ');
+const psiq = s.psiquiatria || {};
+const destino = (st.policy && st.policy.destino) || 'padrao';
+const real = l => (Array.isArray(l) ? l : [l]).filter(a => a && /@/.test(a) && !/[\\[\\]]/.test(a));
+let to = destino === 'clinico' ? real(psiq.contato_clinico || []) : destino === 'administrativo' ? real(psiq.contato_administrativo || []) : [];
+if (!to.length) to = [s.escalation.contact_email];
+// Na área de psiquiatria a secretaria não recebe o conteúdo da mensagem (LGPD: minimização).
+const includeBody = !st.policy || st.policy.include_body !== false;
 const body = ['Uma conversa precisa de atendimento humano.', '',
   'Contato: ' + (msg.from_name ? msg.from_name + ' <' + msg.from_email + '>' : msg.from_email),
   'Assunto: ' + msg.subject, 'Motivo: ' + reasons + (d.escalation_reason ? ' — ' + d.escalation_reason : ''),
@@ -308,9 +369,10 @@ const body = ['Uma conversa precisa de atendimento humano.', '',
   'Abrir no Gmail: https://mail.google.com/mail/u/0/#all/' + msg.gmail_thread_id, '',
   'Responda pela caixa do agente (ou mantenha ' + s.agent.email + ' em cópia) para que o histórico fique registrado.',
   'Enquanto a conversa estiver com status "escalada", o agente não responde automaticamente nesta conversa.', '',
-  '--- Mensagem recebida ---', msg.body_new_text || msg.body_text].join('\\n');
+  ...(includeBody ? ['--- Mensagem recebida ---', msg.body_new_text || msg.body_text]
+    : ['O conteúdo da mensagem não é copiado neste encaminhamento. Leia a conversa pela caixa do agente.'])].join('\\n');
 return [{ json: { settings: s, kind: 'encaminhamento', idempotency_key: c.message_id + ':encaminhamento', conversation_id: c.conversation_id,
-  source_message_id: c.message_id, to: [s.escalation.contact_email], reply_to: msg.reply_to || msg.from_email,
+  source_message_id: c.message_id, to, reply_to: msg.reply_to || msg.from_email,
   subject: '[Encaminhado pelo agente] ' + (msg.subject || '(sem assunto)'), body_text: body } }];`),
     execWf('Enviar encaminhamento', WF.enviar),
     code('Montar confirmação', `${lib('email')}
@@ -335,8 +397,10 @@ const d = st.decision || {};
 return [{ json: { sent: ok, labels: [ids.processado, ids.escalado].filter(Boolean), finish: {
   message_id: c.message_id, status: ok ? 'escalada' : 'falhou', intent: d.intent || null, skip_reason: st.skip_reason || null,
   error: ok ? null : 'encaminhamento_' + fwd.status, workflow: 'processar_mensagem', execution_id: $execution.id,
-  conversation: ok ? { status: 'escalada', summary: d.summary, next_action: 'Aguardando resposta de ' + s.escalation.contact_email, last_intent: d.intent } : undefined,
-  detail: { reasons: st.policy && st.policy.reasons, encaminhamento: fwd, confirmacao: ack.status ? ack : null, model: st.model, usage: st.usage } } } }];`),
+  conversation: ok ? { status: 'escalada', summary: d.summary, next_action: 'Aguardando resposta da equipe', last_intent: d.intent,
+    area: st.policy && st.policy.area } : undefined,
+  detail: { action: (st.policy && st.policy.destino) === 'clinico' ? 'encaminhado_clinico' : 'encaminhado', destino: st.policy && st.policy.destino,
+    reasons: st.policy && st.policy.reasons, encaminhamento: fwd, confirmacao: ack.status ? ack : null, model: st.model, usage: st.usage } } } }];`),
     ifTrue('Encaminhamento enviado?', '$json.sent'),
     http('Rótulos (escalada)', { method: 'POST', url: `=${GMAIL}/messages/{{ $('Entrada').first().json.gmail_message_id }}/modify`, cred: 'gmail', retry: true, body: "={{ JSON.stringify({ addLabelIds: $json.labels }) }}" }),
     sql('Finalizar escalada', 'SELECT agente.finish_message($1::jsonb) AS r', "$('Após encaminhamento').first().json.finish"),
@@ -365,7 +429,12 @@ return [{ json: { labels: [ids.processado, ids.ignorado].filter(Boolean), finish
     ['Carregar contexto', 'Filtrar'], ['Filtrar', 'Usar IA?'],
     ['Usar IA?', 'Montar requisição IA', 0], ['Usar IA?', 'Estado', 1],
     ['Montar requisição IA', 'Claude API'], ['Claude API', 'Aplicar política'], ['Aplicar política', 'Estado'],
-    ['Estado', 'Responder?'], ['Responder?', 'Montar resposta', 0], ['Responder?', 'Escalar?', 1],
+    ['Estado', 'Risco?'], ['Risco?', 'Montar alerta de risco', 0], ['Risco?', 'Responder?', 1],
+    ['Montar alerta de risco', 'Enviar alerta de risco'], ['Enviar alerta de risco', 'Montar resposta de risco'], ['Montar resposta de risco', 'Enviar resposta de risco'],
+    ['Enviar resposta de risco', 'Após risco'], ['Após risco', 'Alerta enviado?'],
+    ['Alerta enviado?', 'Rótulos (risco)', 0], ['Alerta enviado?', 'Finalizar falha de risco', 1],
+    ['Rótulos (risco)', 'Registrar alerta de risco'], ['Registrar alerta de risco', 'Finalizar risco'],
+    ['Responder?', 'Montar resposta', 0], ['Responder?', 'Escalar?', 1],
     ['Escalar?', 'Montar encaminhamento', 0], ['Escalar?', 'Falhou?', 1],
     ['Falhou?', 'Finalizar falha temporária', 0], ['Falhou?', 'Montar ignorada', 1],
     ['Montar resposta', 'Enviar resposta'], ['Enviar resposta', 'Após resposta'], ['Após resposta', 'Resposta enviada?'],
@@ -470,6 +539,7 @@ function wfReconciliar() {
     node('Executar agora', 'n8n-nodes-base.manualTrigger', 1, {}),
     sql('Configuração', SETTINGS_SQL),
     sql('Liberar travas antigas', 'SELECT agente.reset_stale($1::jsonb) AS r', "{ max_attempts: ($json.r.limits || {}).max_attempts || 3, lock_minutes: ($json.r.limits || {}).lock_minutes || 15 }"),
+    sql('Retenção de dados', 'SELECT agente.anonymize_old($1::jsonb) AS r', "{ dias: ($('Configuração').first().json.r.psiquiatria || {}).retencao_dias || null }"),
     code('Janela', `const s = $('Configuração').first().json.r;
 const c = s.calendly || {};
 if (!c.user_uri) throw new Error('calendly.user_uri ausente: rode o workflow de configuração inicial.');
@@ -512,7 +582,7 @@ return [{ json: { log: { workflow: 'reconciliacao', execution_id: $execution.id,
     sql('Registrar reconciliação', 'SELECT agente.log($1::jsonb)', '$json.log'),
   ];
   const edges = [['A cada 30 minutos', 'Configuração'], ['Executar agora', 'Configuração'], ['Configuração', 'Liberar travas antigas'],
-    ['Liberar travas antigas', 'Janela'], ['Janela', 'Listar eventos'], ['Listar eventos', 'Eventos'], ['Eventos', 'Listar convidados'],
+    ['Liberar travas antigas', 'Retenção de dados'], ['Retenção de dados', 'Janela'], ['Janela', 'Listar eventos'], ['Listar eventos', 'Eventos'], ['Eventos', 'Listar convidados'],
     ['Listar convidados', 'Montar agendamentos'], ['Montar agendamentos', 'Gravar agendamentos'], ['Gravar agendamentos', 'Resumo'], ['Resumo', 'Registrar reconciliação']];
   return workflow(WF.reconciliar, 'Agente | Reconciliação', nodes, edges);
 }

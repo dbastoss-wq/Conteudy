@@ -11,6 +11,13 @@ if (!configPath || !kbPath) {
 }
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 config.knowledge_base = fs.readFileSync(kbPath, 'utf8');
+// Modelos fixos (risco, confirmação clínica): config/templates/*.md ao lado do arquivo de configuração.
+const path = require('path');
+const tplDir = path.join(path.dirname(configPath), 'templates');
+if (fs.existsSync(tplDir)) {
+  config.templates = {};
+  for (const f of fs.readdirSync(tplDir).filter(f => f.endsWith('.md'))) config.templates[f.replace(/\.md$/, '')] = fs.readFileSync(path.join(tplDir, f), 'utf8');
+}
 
 const q = s => `'${String(s).replace(/'/g, "''")}'`;
 const lines = ['BEGIN;'];

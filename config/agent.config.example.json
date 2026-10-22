@@ -18,7 +18,29 @@
       "duration_min": 30,
       "purpose": "[FINALIDADE]",
       "scheduling_url": "https://calendly.com/[USUARIO]/[EVENTO]",
-      "event_type_uri": "https://api.calendly.com/event_types/[UUID]"
+      "event_type_uri": "https://api.calendly.com/event_types/[UUID]",
+      "area": "geral",
+      "exige_termo": false
+    },
+    {
+      "key": "psiq_primeira_consulta",
+      "name": "[NOME DA PRIMEIRA CONSULTA PSIQUIÁTRICA]",
+      "duration_min": 0,
+      "purpose": "[FINALIDADE]",
+      "scheduling_url": "https://calendly.com/[USUARIO]/[EVENTO]",
+      "event_type_uri": "https://api.calendly.com/event_types/[UUID]",
+      "area": "psiquiatria",
+      "exige_termo": true
+    },
+    {
+      "key": "psiq_retorno",
+      "name": "[NOME DO RETORNO PSIQUIÁTRICO]",
+      "duration_min": 0,
+      "purpose": "[FINALIDADE]",
+      "scheduling_url": "https://calendly.com/[USUARIO]/[EVENTO]",
+      "event_type_uri": "https://api.calendly.com/event_types/[UUID]",
+      "area": "psiquiatria",
+      "exige_termo": true
     }
   ],
   "escalation": {
@@ -28,8 +50,13 @@
   "alert_email": "[E-MAIL QUE RECEBE ALERTAS DE FALHA]",
   "internal_addresses": [],
   "internal_domains": [],
-  "ignore_sender_domains": ["calendly.com"],
-  "allowed_url_prefixes": ["https://calendly.com/"],
+  "ignore_sender_domains": [
+    "calendly.com"
+  ],
+  "allowed_url_prefixes": [
+    "https://calendly.com/",
+    "[PREFIXO DO SITE DA CLÍNICA, ex.: https://clinica.com.br/]"
+  ],
   "signature": "[NOME DO AGENTE]\nAtendimento [NOME DA EMPRESA]",
   "escalation_ack": "Recebemos sua mensagem e ela foi encaminhada para a nossa equipe, que vai responder por aqui.",
   "send_escalation_ack": true,
@@ -41,7 +68,8 @@
       "processado": "agente-processado",
       "escalado": "agente-escalado",
       "ignorado": "agente-ignorado",
-      "erro": "agente-erro"
+      "erro": "agente-erro",
+      "prioridade": "agente-prioridade"
     }
   },
   "limits": {
@@ -69,5 +97,51 @@
     "gmail_base": "https://gmail.googleapis.com",
     "calendly_base": "https://api.calendly.com",
     "anthropic_base": "https://api.anthropic.com"
+  },
+  "psiquiatria": {
+    "enabled": false,
+    "caixas": [],
+    "plataforma": "[NOME DA PLATAFORMA DE TELECONSULTA]",
+    "termo_consentimento_url": "[URL DO TERMO]",
+    "orientacoes_url": "[URL DAS ORIENTAÇÕES PRÉ-CONSULTA]",
+    "medicos": [
+      {
+        "nome": "[NOME]",
+        "crm": "[CRM/UF]",
+        "rqe": "[RQE]"
+      }
+    ],
+    "contato_clinico": [
+      "[E-MAIL DA EQUIPE CLÍNICA]"
+    ],
+    "contato_clinico_urgente": [
+      "[E-MAIL/PLANTÃO PARA RISCO]"
+    ],
+    "contato_administrativo": [
+      "[E-MAIL DA SECRETARIA]"
+    ],
+    "termos_risco": [
+      {
+        "termo": "[TERMO DEFINIDO PELA EQUIPE CLÍNICA]",
+        "nivel": "alto",
+        "categoria": "crise"
+      },
+      {
+        "termo": "[TERMO DE RISCO A TERCEIROS]",
+        "nivel": "alto",
+        "categoria": "terceiros"
+      },
+      {
+        "termo": "[TERMO DE URGÊNCIA MÉDICA]",
+        "nivel": "alto",
+        "categoria": "urgencia"
+      }
+    ],
+    "termos_clinicos_bloqueados": [],
+    "politica_menores": "encaminhar",
+    "atende_exterior": false,
+    "ack_clinico": "Recebemos sua mensagem e ela foi encaminhada à equipe clínica.",
+    "assinatura": "[ASSINATURA DA ÁREA]",
+    "retencao_dias": null
   }
 }

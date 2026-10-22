@@ -56,7 +56,7 @@
           },
           "conditions": [
             {
-              "id": "57d9291d-03a7-436e-a94f-20f35a724cee",
+              "id": "ed1bf4f8-ab8a-42ab-a44f-838ddb3f048c",
               "leftValue": "={{ $json.valid }}",
               "rightValue": "",
               "operator": {
@@ -150,7 +150,7 @@
           },
           "conditions": [
             {
-              "id": "cded2293-4f34-4a92-84e5-e0171795aa6b",
+              "id": "35f967d9-dec7-4096-b1a2-55e286566f3b",
               "leftValue": "={{ $('Registrar evento').first().json.r.process && ['invitee.created','invitee.canceled'].includes($('Validar assinatura').first().json.body.event) }}",
               "rightValue": "",
               "operator": {
@@ -300,7 +300,7 @@
           },
           "conditions": [
             {
-              "id": "0608c7a9-80f6-4e43-ac1c-3efceceb7bb5",
+              "id": "aeea5c6e-1404-4aae-9444-99072582b802",
               "leftValue": "={{ $json.ok }}",
               "rightValue": "",
               "operator": {

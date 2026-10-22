@@ -86,13 +86,39 @@
       "waitBetweenTries": 2000
     },
     {
-      "id": "8855c872-74f4-07b6-784a-a5d6dd89c20a",
+      "id": "2e5d2d9c-acf7-a07a-f029-d13925354894",
+      "name": "Retenção de dados",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1100,
+        140
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agente.anonymize_old($1::jsonb) AS r",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify({ dias: ($('Configuração').first().json.r.psiquiatria || {}).retencao_dias || null })] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "agPostgres000001",
+          "name": "Agente Postgres"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "d1f7e516-8e0f-f38e-9402-ae60b193576f",
       "name": "Janela",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1100,
-        140
+        1320,
+        280
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -100,13 +126,13 @@
       }
     },
     {
-      "id": "5233b31a-1aac-7aee-3048-bcdb53e86c5a",
+      "id": "a99071c3-ef49-7dbf-3cec-8fde634cfb8f",
       "name": "Listar eventos",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1320,
-        280
+        1540,
+        420
       ],
       "parameters": {
         "method": "GET",
@@ -173,13 +199,13 @@
       "waitBetweenTries": 3000
     },
     {
-      "id": "1fc1b366-cd94-b51f-defa-2b96297d6652",
+      "id": "ee3bfa17-f245-614b-0e67-97bdb390a8a3",
       "name": "Eventos",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1540,
-        420
+        1760,
+        0
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -187,13 +213,13 @@
       }
     },
     {
-      "id": "b3741038-3515-7395-49c3-14a4068f96cf",
+      "id": "3615cf71-d3ce-d371-9f3f-4aeb375a8993",
       "name": "Listar convidados",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1760,
-        0
+        1980,
+        140
       ],
       "parameters": {
         "method": "GET",
@@ -234,13 +260,13 @@
       "waitBetweenTries": 3000
     },
     {
-      "id": "49b0e9ac-b311-5db9-53a2-b3f0ed525003",
+      "id": "f3f5e5e8-38ac-cfdc-77ae-19b46d28cd71",
       "name": "Montar agendamentos",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
-        140
+        2200,
+        280
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -248,13 +274,13 @@
       }
     },
     {
-      "id": "2961a4e9-cefd-d3e0-0940-89660b833d6c",
+      "id": "46575530-d745-d1ab-9ca7-f7942be0ff4a",
       "name": "Gravar agendamentos",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2200,
-        280
+        2420,
+        420
       ],
       "parameters": {
         "operation": "executeQuery",
@@ -274,13 +300,13 @@
       "waitBetweenTries": 2000
     },
     {
-      "id": "e35ab590-d529-30e3-64d9-cbe7b94f794b",
+      "id": "68860e1a-4833-613a-676f-af4c88da7410",
       "name": "Resumo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2420,
-        420
+        2640,
+        0
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -288,13 +314,13 @@
       }
     },
     {
-      "id": "5de0257d-8f02-cc74-6530-1f42fd703d1b",
+      "id": "d5c4d6f5-a480-911e-b45b-4c8fb59408d8",
       "name": "Registrar reconciliação",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2640,
-        0
+        2860,
+        140
       ],
       "parameters": {
         "operation": "executeQuery",
@@ -349,6 +375,17 @@
       ]
     },
     "Liberar travas antigas": {
+      "main": [
+        [
+          {
+            "node": "Retenção de dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retenção de dados": {
       "main": [
         [
           {
