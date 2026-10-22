@@ -38,6 +38,10 @@
    - **resultado**: responder na conversa, encaminhar ao responsável (+ confirmação curta ao contato) ou ignorar. Rótulos `agente-processado` + `agente-escalado`/`agente-ignorado`/`agente-erro`.
 3. **01 Enviar e-mail idempotente**: `prepare_outbound` com chave `<mensagem>:<tipo>` e `Message-ID` gerado antes do envio. Se uma tentativa anterior terminou sem resultado (timeout/5xx), busca `rfc822msgid:` na caixa antes de reenviar. O resultado real (id da Gmail ou erro HTTP) é gravado por `record_send_result`. Envios nunca são repetidos automaticamente pelo nó HTTP.
 
+## Área de psiquiatria e protocolo de risco
+
+Detecção de risco determinística (`src/risk.js`) logo após a normalização, antes dos filtros e da IA; alerta urgente e modelo fixo, sem texto da IA; roteamento clínico/administrativo. Detalhes em [psiquiatria.md](psiquiatria.md).
+
 ## Fluxo de agendamento
 
 - A IA escolhe `enviar_link_agendamento` + `meeting_type_key`; o sistema monta o link do tipo configurado com `name`, `email` (pré-preenchimento) e `utm_content=<id da conversa>`.

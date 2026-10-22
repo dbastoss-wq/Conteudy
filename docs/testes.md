@@ -10,6 +10,10 @@ Isso valida a lógica dos workflows, o banco, a idempotência e a recuperação 
 
 Normalização de mensagens, MIME de resposta, filtros anti-ciclo, montagem da requisição de IA (isolamento do e-mail), interpretação de recusa/truncamento, política (preço fora da base, URL não autorizada, reserva não verificada, tipo de reunião inválido, baixa confiança, links oficiais), assinatura do webhook do Calendly e mapeamento de status.
 
+### Área de psiquiatria — `tests/psiquiatria.test.js` (18/18 aprovados)
+
+Risco (acentos, variações, falsos positivos), precedência do risco, modelos fixos, alerta sem conteúdo, roteamento clínico/administrativo, bloqueio de dose/CID/remédio/promessa, termo de consentimento, área, filtros anti-loop com risco, injeção, schema e prompt. O schema e as funções SQL novas foram verificados em PostgreSQL 16 (migração reaplicável, área não volta para geral, risco só sobe, retenção anonimiza, `action_log` sem corpo). **Os cenários de integração com n8n da área ainda não foram rodados** (n8n não disponível no ambiente).
+
 ### Integração — `node tests/integration.js` (17/17 aprovados)
 
 | Cenário | Resultado |

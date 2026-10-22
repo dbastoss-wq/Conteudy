@@ -15,7 +15,7 @@ Este arquivo explica o projeto para qualquer IA (Claude Code, Copilot, Cursor et
 | | |
 |---|---|
 | Implementado | 7 workflows n8n, schema SQL com funções de idempotência, filtros anti-ciclo, camada de política sobre a IA, webhook do Calendly com assinatura HMAC, reconciliação, alertas, docker-compose. |
-| Testado | `npm test`: 13 testes unitários, todos passando. `tests/integration.js`: 17 cenários com n8n e Postgres reais e APIs simuladas (`tests/mock-server.js`). |
+| Testado | `npm test`: 31 testes unitários (13 gerais + 18 da psiquiatria), todos passando. `tests/integration.js`: 17 cenários com n8n e Postgres reais e APIs simuladas (`tests/mock-server.js`). |
 | Pendente | Nada está conectado a contas reais: domínio e caixa do agente, OAuth do Google, token e plano do Calendly, chave da Claude API, servidor HTTPS, dados da empresa e base de conhecimento. A lista completa está em `docs/configuracao.md` §1. |
 
 ## 3. Estrutura
@@ -51,6 +51,10 @@ docs/               arquitetura.md, configuracao.md, operacao.md, testes.md
 | 06 | Alertas de falha | Error Workflow | Registra em `action_log` e envia alerta (no máximo 1 por erro por hora) |
 
 Credenciais do n8n, referenciadas por nome nos workflows: `Agente Postgres`, `Agente Gmail OAuth2`, `Agente Anthropic API`, `Agente Calendly PAT`.
+
+## 4.1 Área de psiquiatria
+
+`src/risk.js` detecta risco antes dos filtros e da IA; risco → modelo fixo (`config/templates/`), alerta urgente sem conteúdo, conversa escalada, rótulo `agente-prioridade`. Encaminhamentos com `destino` clínico/administrativo. Área desligada por padrão (`psiquiatria.enabled`). Tudo em `docs/psiquiatria.md`. Testes: `tests/psiquiatria.test.js`.
 
 ## 5. Princípios do projeto (não quebre)
 

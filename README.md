@@ -31,4 +31,6 @@ docs/            arquitetura, configuração, operação e testes
 4. Rodar manualmente **Agente | Configuração inicial** no n8n.
 5. Validar com caixa e calendário de teste ([docs/testes.md](docs/testes.md)), depois apontar para a caixa real.
 
+Área de teleconsulta em psiquiatria (desligada por padrão): [docs/psiquiatria.md](docs/psiquiatria.md).
+
 Documentação: [arquitetura](docs/arquitetura.md) · [configuração](docs/configuracao.md) · [operação](docs/operacao.md) · [testes](docs/testes.md).

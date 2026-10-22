@@ -18,6 +18,9 @@ Tudo o que está aqui depende de você (ou de quem administra as contas). Nenhum
 
 ## 2. Configuração do agente
 
+Área de psiquiatria: bloco `psiquiatria`, modelos em `config/templates/` e checklist em [psiquiatria.md](psiquiatria.md). Banco já existente: rode `db/migracoes/001_psiquiatria.sql` e depois reaplique `db/schema.sql`.
+
+
 ```bash
 cp config/agent.config.example.json config/agent.config.json
 cp config/knowledge-base.example.md config/knowledge-base.md

@@ -12,7 +12,7 @@
 | Agente \| Alertas de falha | erro em qualquer workflow | Registra e envia alerta (máx. 1 por erro/hora) |
 | Agente \| Configuração inicial | manual | Rótulos do Gmail, dados do Calendly, assinatura do webhook |
 
-Rótulos no Gmail: `agente-processado` (concluída), `agente-escalado` (com humano), `agente-ignorado` (automática/spam/interna), `agente-erro` (precisa de resposta manual).
+Rótulos no Gmail: `agente-prioridade` (sinal de risco: alerta urgente enviado à equipe clínica), `agente-processado` (concluída), `agente-escalado` (com humano), `agente-ignorado` (automática/spam/interna), `agente-erro` (precisa de resposta manual).
 
 ## Atender uma conversa encaminhada
 
@@ -58,6 +58,8 @@ UPDATE agente.outbound_emails SET attempts = 0 WHERE status = 'falhou'
 e remova os rótulos `agente-processado` e `agente-erro` da mensagem no Gmail. Envios já feitos não se repetem (chave de idempotência).
 
 ## Pausar
+
+**Atenção:** pausar o agente também pausa a detecção de risco da área de psiquiatria. Enquanto o agente estiver pausado ou fora do ar, a caixa precisa de cobertura humana.
 
 `SELECT agente.settings_set('paused', 'true');` suspende o polling (o webhook continua registrando reservas). Volte com `'false'`.
 
