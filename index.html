@@ -7,10 +7,10 @@
 /* =====================================================================
    // TROCAR AQUI — dados da clínica. Altere só o texto entre aspas.
    ===================================================================== */
-const WHATSAPP  = "";                 // só números, com DDI e DDD. Ex.: "5511987654321". Vazio = WhatsApp abre para a pessoa escolher o contato.
-const CRM       = "";                 // Ex.: "CRM-SP 123456". Vazio = exibe "CRM [CONFIRMAR]".
+const WHATSAPP  = "5516991678705";           // só números, com DDI e DDD. Ex.: "5511987654321". Vazio = WhatsApp abre para a pessoa escolher o contato.
+const CRM       = "CRM-SP 228558";           // Ex.: "CRM-SP 123456". Vazio = exibe "CRM [CONFIRMAR]".
 const RQE       = "";                 // Ex.: "98765". Vazio = exibe "médica com atuação em saúde mental" (sem a palavra Psiquiatra).
-const ENDERECO  = "";                 // Ex.: "Rua Exemplo, 100, sala 12 · Bairro · Cidade/UF". Vazio = exibe "[ENDEREÇO A CONFIRMAR]".
+const ENDERECO  = "";                 // Ex.: "Rua Exemplo, 100, sala 12 · Bairro · Cidade/UF". Vazio = endereço oculto ("informado no agendamento").
 const INSTAGRAM = "dra.arianecristina";
 const MODO_DEPOIMENTOS = false;       // Mantenha false. A Resolução CFM 2.336/2023 proíbe depoimentos de pacientes,
                                       // antes e depois e promessa de resultado. A seção 06 exibe reflexões da médica, nunca relatos.
@@ -31,7 +31,7 @@ const MODO_DEPOIMENTOS = false;       // Mantenha false. A Resolução CFM 2.336
 <link rel="preload" href="assets/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/jost-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script type="application/ld+json" id="schema">
-{"@context":"https://schema.org","@type":"Physician","name":"Dra. Ariane Cristina","description":"Médica com atuação em saúde mental de mulheres, mães e crianças atípicas.","medicalSpecialty":"Psychiatric","url":"https://dra-arianecristina.vercel.app/","image":"https://dra-arianecristina.vercel.app/assets/img/og.jpg","sameAs":["https://www.instagram.com/dra.arianecristina/"],"telephone":"[CONFIRMAR]","address":{"@type":"PostalAddress","streetAddress":"[CONFIRMAR]","addressLocality":"[CONFIRMAR]","addressRegion":"[CONFIRMAR]","addressCountry":"BR"},"availableService":[{"@type":"MedicalTherapy","name":"Consulta presencial"},{"@type":"MedicalTherapy","name":"Teleconsulta"}]}
+{"@context":"https://schema.org","@type":"Physician","name":"Dra. Ariane Cristina","description":"Médica com atuação em saúde mental de mulheres, mães e crianças atípicas.","medicalSpecialty":"Psychiatric","url":"https://dra-arianecristina.vercel.app/","image":"https://dra-arianecristina.vercel.app/assets/img/og.jpg","sameAs":["https://www.instagram.com/dra.arianecristina/"],"telephone":"+5516991678705","address":{"@type":"PostalAddress","streetAddress":"[CONFIRMAR]","addressLocality":"[CONFIRMAR]","addressRegion":"[CONFIRMAR]","addressCountry":"BR"},"availableService":[{"@type":"MedicalTherapy","name":"Consulta presencial"},{"@type":"MedicalTherapy","name":"Teleconsulta"}]}
 </script>
 <!--
   CONCEITO CRIATIVO · "A sala de escuta"
@@ -632,7 +632,7 @@ section{position:relative}
       <li class="step" data-reveal style="--d:4"><span class="step__n" aria-hidden="true">04</span><h3>Plano de cuidado</h3><p>Construímos juntos um plano individualizado, com acompanhamento próximo e ajustes ao longo do caminho.</p></li>
     </ol>
     <div class="modes" data-reveal>
-      <div class="mode"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 28s-8-8.2-8-14a8 8 0 0 1 16 0c0 5.8-8 14-8 14z"/><circle cx="16" cy="14" r="3"/></svg><span><strong>Presencial</strong> · <span data-endereco>[ENDEREÇO A CONFIRMAR]</span></span></div>
+      <div class="mode"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 28s-8-8.2-8-14a8 8 0 0 1 16 0c0 5.8-8 14-8 14z"/><circle cx="16" cy="14" r="3"/></svg><span><strong>Presencial</strong> · <span data-endereco>endereço informado no agendamento</span></span></div>
       <div class="mode"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="7" width="22" height="15" rx="2"/><path d="M12 26h8M16 22v4"/></svg><span><strong>Online</strong> · teleconsulta segura</span></div>
     </div>
   </div>
@@ -714,7 +714,7 @@ section{position:relative}
     <p class="footer__big">Acolhimento, ciência<br>e <em>cuidado</em>.</p>
     <div class="footer__grid">
       <div><h3>Responsável técnica</h3><p>Dra. Ariane Cristina</p><p data-cred>Médica com atuação em saúde mental</p></div>
-      <div><h3>Atendimento</h3><p>Presencial e online</p><p data-endereco>[ENDEREÇO A CONFIRMAR]</p></div>
+      <div><h3>Atendimento</h3><p>Presencial e online</p><p>Presencial: <span data-endereco>endereço informado no agendamento</span></p></div>
       <div><h3>Redes</h3><p><a data-ig href="https://www.instagram.com/dra.arianecristina/" target="_blank" rel="noopener">@dra.arianecristina</a></p><p><a data-wa href="https://wa.me/" target="_blank" rel="noopener">WhatsApp</a></p></div>
     </div>
     <p class="alert" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.2v.1"/></svg><span>Este site não substitui atendimento de urgência. Em crise, ligue <strong>188 (CVV)</strong> ou <strong>192 (SAMU)</strong>.</span></p>
@@ -757,7 +757,7 @@ section{position:relative}
   const waLink = (msg) => `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
   const crmTxt = CRM.trim() || "CRM [CONFIRMAR]";
   const cred = RQE.trim() ? `Psiquiatra · ${crmTxt} · RQE ${RQE.trim()}` : `Médica com atuação em saúde mental · ${crmTxt}`;
-  const end = ENDERECO.trim() || "[ENDEREÇO A CONFIRMAR]";
+  const end = ENDERECO.trim() || "endereço informado no agendamento";
   const ig = String(INSTAGRAM).replace(/^@/, "");
   const MSG_GERAL = "Olá, Dra. Ariane. Vim pelo site e gostaria de informações sobre o atendimento.";
   $$("[data-cred]").forEach(el => el.textContent = cred);
@@ -769,7 +769,7 @@ section{position:relative}
     const sc = $("#schema"), data = JSON.parse(sc.textContent);
     data.description = cred + ". Saúde mental de mulheres, mães e crianças atípicas.";
     if (num) data.telephone = "+" + num;
-    if (ENDERECO.trim()) data.address.streetAddress = ENDERECO.trim();
+    if (ENDERECO.trim()) data.address.streetAddress = ENDERECO.trim(); else delete data.address;
     data.sameAs = [`https://www.instagram.com/${ig}/`];
     if (!RQE.trim()) delete data.medicalSpecialty;
     sc.textContent = JSON.stringify(data);
