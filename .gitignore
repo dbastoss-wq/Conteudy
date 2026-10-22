@@ -1,0 +1,4 @@
+# dados reais do paciente: nunca versionar
+content.js
+*.local.*
+teleconsulta-backup-*.json
