@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agende sua consulta · Dr. Daniel Cardoso de Bastos</title>
+<meta name="description" content="Agendamento online com o Dr. Daniel Cardoso de Bastos, Clínico Geral, CRM-SP 239894. Escolha o dia e o horário; a confirmação chega pelo WhatsApp.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#F8F5EE">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23653C47'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='Georgia,serif' font-size='25' letter-spacing='1' fill='%23F8F5EE'%3EDB%3C/text%3E%3C/svg%3E">
+
+<!-- Fontes: conexão antecipada + carregamento sem bloquear a página (3 arquivos variáveis, só latin) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500..600;1,500&family=DM+Sans:wght@400..600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500..600;1,500&family=DM+Sans:wght@400..600&display=swap"></noscript>
+
+<style>
+/* Fontes de reserva com métricas ajustadas: o texto não "pula" quando as fontes chegam */
+@font-face{font-family:"Cormorant Reserva";src:local("Times New Roman"),local("Times"),local("Liberation Serif");size-adjust:91.78%;ascent-override:100.67%;descent-override:31.27%;line-gap-override:0%}
+@font-face{font-family:"DM Sans Reserva";src:local("Arial"),local("Helvetica"),local("Liberation Sans");size-adjust:103.04%;ascent-override:96.27%;descent-override:30.09%;line-gap-override:0%}
+
+:root{
+  /* Identidade */
+  --marfim:#F8F5EE; --vinho:#653C47; --dourado:#886434; --taupe:#776963; --marrom:#473A35; --bege:#EEE8DF;
+  /* Apoio (derivados da paleta) */
+  --vinho-escuro:#54313B; --cartao:#FCFAF6; --linha:#E3DACD; --borda-suave:#D9CFC2; --borda:#8F8079; --erro:#9E2A2B;
+  --serif:"Cormorant Garamond","Cormorant Reserva",Georgia,"Times New Roman",serif;
+  --sans:"DM Sans","DM Sans Reserva",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --raio:14px;
+  --sombra:0 1px 2px rgba(71,58,53,.05),0 18px 40px -22px rgba(71,58,53,.28);
+  --gutter:clamp(16px,5vw,40px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:16px}
+body{margin:0;background:var(--marfim);color:var(--marrom);font-family:var(--sans);font-size:1rem;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;-webkit-tap-highlight-color:transparent}
+img{display:block;max-width:100%;height:auto}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3,p{margin:0}
+h1,h2,.marca__nome,.resumo__data,.rodape__nome{font-variant-numeric:lining-nums}
+[hidden]{display:none!important}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.wrap{width:100%;max-width:1120px;margin:0 auto;padding-left:max(var(--gutter),env(safe-area-inset-left));padding-right:max(var(--gutter),env(safe-area-inset-right))}
+
+/* Pular para o conteúdo */
+.pular{position:absolute;left:16px;top:-60px;z-index:50;background:var(--vinho);color:var(--marfim);padding:10px 16px;border-radius:10px;font-weight:600;text-decoration:none}
+.pular:focus{top:12px;outline:3px solid var(--dourado);outline-offset:2px}
+
+/* ---------- Topo ---------- */
+.topo{padding-top:max(14px,env(safe-area-inset-top))}
+.topo__inner{display:flex;align-items:center;gap:14px;padding-top:4px;padding-bottom:14px;position:relative}
+.topo__inner::after{content:"";position:absolute;left:var(--gutter);right:var(--gutter);bottom:0;height:1px;background:linear-gradient(90deg,var(--dourado),rgba(136,100,52,.15) 70%,transparent)}
+.monograma{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;border:1px solid var(--dourado);color:var(--vinho);font-family:var(--serif);font-weight:600;font-size:1.25rem;letter-spacing:.04em;line-height:1;background:var(--cartao)}
+.logo{flex:none;width:46px;height:46px;object-fit:contain}
+.marca__nome{font-family:var(--serif);font-weight:600;font-size:1.2rem;line-height:1.15;color:var(--marrom)}
+.marca__crm{font-size:.8125rem;color:var(--taupe);letter-spacing:.02em;margin-top:2px}
+
+/* ---------- Apresentação ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:18px;row-gap:14px;align-items:end;padding-top:26px;padding-bottom:26px}
+.hero__titulo{grid-column:1;align-self:end}
+.eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--dourado);display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--dourado)}
+h1{font-family:var(--serif);font-weight:600;color:var(--vinho);font-size:clamp(2.35rem,9.5vw,4.1rem);line-height:1;letter-spacing:-.01em;margin-top:10px}
+h1 em{font-style:italic;font-weight:500;color:var(--dourado)}
+.retrato{grid-column:2;grid-row:1;margin:0;position:relative;width:clamp(96px,27vw,128px);justify-self:end}
+.retrato img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:999px 999px 16px 16px;background:var(--bege);position:relative;z-index:1}
+.retrato::before{content:"";position:absolute;inset:-7px 7px 7px -7px;border:1px solid var(--dourado);border-radius:999px 999px 16px 16px;opacity:.75}
+.sem-foto .retrato{display:none}
+.retrato:has(img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"]){display:none} /* regra separada: navegadores sem :has() ignoram só esta linha */
+.sem-foto .hero{grid-template-columns:1fr}
+.hero__texto{grid-column:1/-1}
+.lead{font-size:1.0625rem;line-height:1.65;max-width:38ch;color:var(--marrom)}
+.info{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.info li{display:inline-flex;align-items:center;gap:8px;background:var(--cartao);border:1px solid var(--linha);border-radius:999px;padding:7px 14px 7px 11px;font-size:.875rem;line-height:1.3;color:var(--marrom)}
+.info svg{flex:none;width:17px;height:17px;stroke:var(--dourado)}
+
+/* ---------- Cartão de agendamento ---------- */
+main{padding-bottom:40px}
+.reserva{background:var(--cartao);border:1px solid var(--linha);border-radius:22px;box-shadow:var(--sombra);padding:22px 16px 26px;scroll-margin-top:12px}
+.passo{scroll-margin-top:16px}
+.passo + .passo,.passo--dados{margin-top:26px;padding-top:24px;border-top:1px solid var(--linha)}
+.reserva:focus{outline:none}
+.passo__titulo{display:flex;align-items:center;gap:12px;font-family:var(--serif);font-weight:600;font-size:1.7rem;line-height:1.1;color:var(--marrom)}
+.passo__titulo:focus{outline:none}
+.passo__num{flex:none;position:relative;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid var(--dourado);color:var(--dourado);font-family:var(--sans);font-size:.875rem;font-weight:600;transition:background-color .2s,border-color .2s,color .2s}
+.is-feito .passo__num{background:var(--vinho);border-color:var(--vinho);color:transparent}
+.is-feito .passo__num::after{content:"";position:absolute;width:11px;height:6px;border-left:2px solid var(--marfim);border-bottom:2px solid var(--marfim);transform:translateY(-2px) rotate(-45deg)}
+.passo__dica{margin-top:6px;font-size:.9375rem;color:var(--taupe)}
+.passo__dica strong{color:var(--marrom);font-weight:600}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+
+/* Dias */
+.dias{margin-top:16px;--cols:4}
+.dias__cab,.semana{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:8px}
+.dias__cab{text-align:center;font-size:.75rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);padding-bottom:2px}
+.semana{margin-top:10px}
+.dia{position:relative;display:block;min-width:0}
+.dia input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.dia__card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70px;padding:10px 2px 8px;border:1px solid var(--borda-suave);border-radius:var(--raio);background:var(--marfim);cursor:pointer;transition:background-color .18s,border-color .18s,box-shadow .18s,transform .18s;user-select:none;-webkit-user-select:none}
+.dia__num{font-family:var(--serif);font-weight:600;font-size:1.75rem;line-height:1;color:var(--marrom);font-variant-numeric:lining-nums}
+.dia__mes{margin-top:4px;font-size:.75rem;line-height:1.1;color:var(--taupe);text-align:center}
+.dia__tag{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--dourado);color:var(--marfim);font-size:.625rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;line-height:1;padding:4px 7px;border-radius:999px;white-space:nowrap}
+.dia input:checked + .dia__card{background:var(--vinho);border-color:var(--vinho);box-shadow:0 10px 20px -12px rgba(101,60,71,.8)}
+.dia input:checked + .dia__card .dia__num,.dia input:checked + .dia__card .dia__mes{color:var(--marfim)}
+.dia input:focus-visible + .dia__card{outline:2px solid var(--vinho);outline-offset:3px}
+.dia input:disabled + .dia__card{background:transparent;border-style:dashed;cursor:not-allowed}
+.dia input:disabled + .dia__card .dia__num{color:var(--taupe);font-weight:500}
+.dia--fora .dia__card{background:transparent;border-color:transparent;cursor:default}
+.dia--fora .dia__num{color:#CFC5B9;font-weight:500;font-size:1.35rem}
+.dias__vazio{margin-top:14px;padding:16px;border-radius:var(--raio);background:var(--bege);color:var(--marrom);font-size:.9375rem}
+
+/* Horários */
+.horarios{margin-top:16px;animation:surgir .25s ease-out}
+.turno + .turno{margin-top:18px}
+.turno__titulo{display:flex;align-items:center;gap:10px;font-family:var(--sans);font-size:.75rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--taupe);margin-bottom:10px}
+.turno__titulo::after{content:"";flex:1;height:1px;background:var(--linha)}
+.turno__grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.hora{position:relative;display:block}
+.hora input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.hora__card{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:0 6px;border:1px solid var(--borda-suave);border-radius:999px;background:var(--marfim);font-weight:500;font-size:1rem;font-variant-numeric:tabular-nums;color:var(--marrom);cursor:pointer;transition:background-color .18s,border-color .18s,box-shadow .18s;user-select:none;-webkit-user-select:none}
+.hora input:checked + .hora__card{background:var(--vinho);border-color:var(--vinho);color:var(--marfim);font-weight:600;box-shadow:0 10px 20px -12px rgba(101,60,71,.8)}
+.hora input:focus-visible + .hora__card{outline:2px solid var(--vinho);outline-offset:3px}
+.aviso{margin-top:14px;display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--bege);color:var(--marrom);font-size:.9375rem;line-height:1.5}
+.aviso::before{content:"!";flex:none;display:grid;place-items:center;width:20px;height:20px;margin-top:1px;border-radius:50%;background:var(--vinho);color:var(--marfim);font-size:.75rem;font-weight:700}
+@media (hover:hover){
+  .dia input:not(:disabled):not(:checked) + .dia__card:hover,.hora input:not(:checked) + .hora__card:hover{border-color:var(--dourado);background:var(--cartao);box-shadow:0 8px 18px -14px rgba(71,58,53,.6)}
+}
+
+/* Resumo e formulário */
+.resumo{margin-top:16px;border-radius:16px;background:var(--bege);padding:16px 18px;position:relative;overflow:hidden}
+.resumo::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--dourado)}
+.resumo__vazio{font-size:.9375rem;color:var(--marrom)}
+.resumo__rotulo{font-size:.6875rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--vinho)}
+.resumo__data{margin-top:4px;font-family:var(--serif);font-weight:600;font-size:1.45rem;line-height:1.15;color:var(--marrom)}
+.resumo__hora{font-size:1rem;color:var(--marrom);margin-top:2px}
+.resumo__hora strong{font-weight:600}
+.link-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin-top:4px;padding:0;border:0;background:none;color:var(--vinho);font-weight:600;font-size:.9375rem;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}
+.link-btn:hover{color:var(--vinho-escuro);text-decoration-thickness:2px}
+.link-btn:focus-visible{outline:2px solid var(--vinho);outline-offset:3px;border-radius:4px}
+
+.campo{margin-top:18px}
+.campo > label{display:block;font-weight:600;font-size:.9375rem;color:var(--marrom);margin-bottom:6px}
+.campo__dica{font-size:.875rem;color:var(--taupe);margin:-2px 0 8px}
+.campo input[type=text],.campo input[type=tel]{display:block;width:100%;min-height:52px;padding:12px 16px;border:1px solid var(--borda);border-radius:12px;background:var(--marfim);font-size:1.0625rem;line-height:1.3;color:var(--marrom);transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+.campo input::placeholder{color:#8A7C75;opacity:1}
+.campo input:focus{outline:2px solid var(--vinho);outline-offset:1px;border-color:var(--vinho)}
+.campo input[aria-invalid=true]{border-color:var(--erro);box-shadow:inset 0 0 0 1px var(--erro)}
+.campo--check{display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:start;margin-top:20px}
+.campo--check input{width:24px;height:24px;margin:1px 0 0;accent-color:var(--vinho);cursor:pointer}
+.campo--check input:focus-visible{outline:2px solid var(--vinho);outline-offset:3px}
+.campo--check label{font-size:.9375rem;font-weight:400;line-height:1.5;color:var(--marrom);cursor:pointer}
+.campo--check .erro{grid-column:1/-1}
+.erro{display:flex;gap:8px;align-items:flex-start;margin-top:8px;color:var(--erro);font-size:.9rem;font-weight:500;line-height:1.45}
+.erro::before{content:"!";flex:none;display:grid;place-items:center;width:18px;height:18px;margin-top:1px;border-radius:50%;background:var(--erro);color:#fff;font-size:.7rem;font-weight:700}
+.erro--geral{margin-top:16px;padding:12px 14px;border-radius:12px;background:#F6E9E6}
+.privacidade{display:flex;gap:10px;align-items:flex-start;margin-top:18px;font-size:.875rem;line-height:1.5;color:var(--taupe)}
+.privacidade svg{flex:none;width:18px;height:18px;margin-top:1px;stroke:var(--dourado)}
+.hp{position:absolute!important;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+.btn-enviar{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;margin-top:20px;padding:14px 20px;border:0;border-radius:var(--raio);background:var(--vinho);color:var(--marfim);font-weight:600;font-size:1.0625rem;letter-spacing:.01em;box-shadow:0 14px 26px -16px rgba(101,60,71,.9);transition:background-color .18s,transform .12s}
+.btn-enviar:hover{background:var(--vinho-escuro)}
+.btn-enviar:active{transform:translateY(1px)}
+.btn-enviar:focus-visible{outline:3px solid var(--dourado);outline-offset:3px}
+.btn-enviar[aria-busy=true]{cursor:progress;opacity:.85}
+.btn-enviar[aria-busy=true]::before{content:"";width:18px;height:18px;border-radius:50%;border:2px solid rgba(248,245,238,.35);border-top-color:var(--marfim);animation:girar .8s linear infinite}
+.btn-enviar svg{width:18px;height:18px;stroke:currentColor}
+.depois-envio{margin-top:10px;text-align:center;font-size:.875rem;color:var(--taupe)}
+.urgencia{margin-top:22px;padding-top:16px;border-top:1px solid var(--linha);font-size:.8125rem;line-height:1.55;color:var(--taupe)}
+.urgencia strong{color:var(--marrom);font-weight:600}
+.noscript{padding:16px;border-radius:var(--raio);background:var(--bege);color:var(--marrom)}
+
+/* Sucesso */
+.sucesso{text-align:center;padding:18px 4px 6px;animation:surgir .35s ease-out}
+.sucesso:focus{outline:none}
+.sucesso__icone{display:grid;place-items:center;width:72px;height:72px;margin:0 auto 18px;border-radius:50%;border:1px solid var(--dourado);background:var(--marfim)}
+.sucesso__icone svg{width:30px;height:30px;stroke:var(--vinho)}
+.sucesso h2{font-family:var(--serif);font-weight:600;font-size:2.3rem;line-height:1.05;color:var(--vinho)}
+.sucesso__msg{margin:10px auto 0;max-width:34ch;font-size:1.0625rem;color:var(--marrom)}
+.sucesso__resumo{display:inline-block;margin-top:20px;padding:12px 18px;border-radius:12px;background:var(--bege);color:var(--marrom);font-size:.9375rem}
+.sucesso__resumo strong{font-weight:600}
+.sucesso__nota{margin:16px auto 0;max-width:40ch;font-size:.875rem;color:var(--taupe)}
+
+/* Rodapé */
+.rodape{padding:26px 0 calc(30px + env(safe-area-inset-bottom));text-align:center}
+.rodape__orn{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px}
+.rodape__orn::before,.rodape__orn::after{content:"";width:56px;height:1px;background:var(--dourado);opacity:.7}
+.rodape__orn span{width:6px;height:6px;transform:rotate(45deg);border:1px solid var(--dourado)}
+.rodape__nome{font-family:var(--serif);font-weight:600;font-size:1.25rem;color:var(--marrom)}
+.rodape p + p{margin-top:2px}
+.rodape__info{font-size:.875rem;color:var(--taupe)}
+.rodape__nota{margin-top:10px!important;font-size:.8125rem;color:var(--taupe);max-width:52ch;margin-left:auto;margin-right:auto}
+
+/* Barra fixa (celular) */
+.barra{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(252,250,246,.97);border-top:1px solid var(--linha);box-shadow:0 -12px 30px -16px rgba(71,58,53,.35);padding:10px max(16px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));animation:subir .25s ease-out}
+@supports ((-webkit-backdrop-filter:blur(8px)) or (backdrop-filter:blur(8px))){.barra{background:rgba(252,250,246,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}}
+.barra__inner{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:640px;margin:0 auto}
+.barra__texto{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.barra__rotulo{font-size:.6875rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--taupe)}
+.barra__texto strong{font-size:1rem;font-weight:600;color:var(--marrom);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barra__btn{flex:none;min-height:48px;padding:0 22px;border:0;border-radius:12px;background:var(--vinho);color:var(--marfim);font-weight:600;font-size:1rem}
+.barra__btn:focus-visible{outline:3px solid var(--dourado);outline-offset:2px}
+body.com-barra{padding-bottom:84px}
+
+@keyframes surgir{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes subir{from{transform:translateY(100%)}to{transform:none}}
+@keyframes girar{to{transform:rotate(360deg)}}
+
+/* Telas maiores */
+@media (min-width:600px){
+  .reserva{padding:32px 30px 34px;border-radius:26px}
+  .dia__card{min-height:78px}
+  .dia__num{font-size:2rem}
+  .dias__cab,.semana{gap:10px}
+  .hero{padding-top:36px;padding-bottom:34px}
+}
+@media (min-width:960px){
+  .topo__inner{padding-bottom:18px}
+  .monograma,.logo{width:52px;height:52px}
+  .hero{grid-template-columns:minmax(0,1fr) 300px;column-gap:64px;align-items:center;padding-top:56px;padding-bottom:52px}
+  .hero__titulo{grid-row:1}
+  .hero__texto{grid-column:1;grid-row:2;align-self:start}
+  .retrato{grid-column:2;grid-row:1/span 2;width:280px}
+  .retrato::before{inset:-12px 12px 12px -12px}
+  .lead{font-size:1.125rem}
+  .reserva{padding:44px 44px 46px}
+  .reserva__grade{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);column-gap:48px;align-items:start}
+  .passo--dados{position:sticky;top:24px;margin-top:0;padding-top:0;border-top:0;margin-left:-24px;padding-left:24px;border-left:1px solid var(--linha)}
+  body.com-barra{padding-bottom:0}
+  .barra{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+@media (forced-colors:active){
+  .dia input:checked + .dia__card,.hora input:checked + .hora__card{outline:3px solid Highlight;outline-offset:2px}
+  .dia input:disabled + .dia__card{opacity:.6}
+  .passo__num,.is-feito .passo__num{forced-color-adjust:none}
+}
+</style>
+</head>
+<body>
+<a class="pular" href="#agendar">Ir direto para o agendamento</a>
+
+<header class="topo">
+  <div class="wrap topo__inner">
+    <!-- LOGO DB: troque o <span class="monograma"> abaixo pela tag do logo do arquivo original,
+         por exemplo: <img class="logo" src="data:image/png;base64,..." alt="" width="52" height="52"> -->
+    <span class="monograma" aria-hidden="true">DB</span>
+    <div class="marca">
+      <p class="marca__nome">Dr. Daniel Cardoso de Bastos</p>
+      <p class="marca__crm">Clínico Geral · CRM-SP 239894</p>
+    </div>
+  </div>
+</header>
+
+<main id="conteudo">
+  <section class="hero wrap" aria-labelledby="titulo">
+    <div class="hero__titulo">
+      <p class="eyebrow">Agendamento online</p>
+      <h1 id="titulo">Agende sua <em>consulta</em></h1>
+    </div>
+    <!-- FOTO: substitua todo o valor do src abaixo pelo data URI da foto do arquivo original (data:image/jpeg;base64,...).
+         Enquanto estiver com a imagem provisória (GIF transparente), a moldura fica oculta e o layout se ajusta sozinho. -->
+    <figure class="retrato">
+      <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Foto do Dr. Daniel Cardoso de Bastos" width="560" height="700" decoding="async">
+    </figure>
+    <div class="hero__texto">
+      <p class="lead">Escolha o dia e o horário que forem melhores para você e deixe seu nome e WhatsApp. A equipe do Dr. Daniel confirma o agendamento por mensagem.</p>
+      <ul class="info">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Segundas, quintas, sextas e sábados</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Das 9h às 18h, horário de Brasília</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4A8 8 0 1 1 20 11.5Z"/></svg>Confirmação pelo WhatsApp</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <section class="reserva" id="agendar" aria-labelledby="titulo-dia" tabindex="-1">
+      <noscript><p class="noscript">Para escolher o dia e o horário, é preciso ativar o JavaScript do navegador.</p></noscript>
+
+      <div class="reserva__grade" id="etapas">
+        <div class="reserva__escolha">
+          <div class="passo" id="passo-dia">
+            <h2 class="passo__titulo" id="titulo-dia" tabindex="-1"><span class="passo__num" aria-hidden="true">1</span>Escolha o dia</h2>
+            <p class="passo__dica">Dias com atendimento nas próximas 4 semanas.</p>
+            <fieldset class="dias" id="dias-fs">
+              <legend class="sr-only">Dia da consulta</legend>
+              <div class="dias__cab" id="dias-cab" aria-hidden="true"></div>
+              <div id="dias"></div>
+            </fieldset>
+          </div>
+
+          <div class="passo" id="passo-horario">
+            <h2 class="passo__titulo" id="titulo-horario" tabindex="-1"><span class="passo__num" aria-hidden="true">2</span>Escolha o horário</h2>
+            <p class="passo__dica" id="horario-dica">Escolha um dia acima para ver os horários.</p>
+            <p class="aviso" id="aviso" hidden></p>
+            <fieldset class="horarios" id="horarios-fs" hidden>
+              <legend class="sr-only" id="horarios-legenda">Horário da consulta</legend>
+              <div id="horarios"></div>
+            </fieldset>
+          </div>
+        </div>
+
+        <div class="passo passo--dados" id="passo-dados">
+          <h2 class="passo__titulo" id="titulo-dados" tabindex="-1"><span class="passo__num" aria-hidden="true">3</span>Seus dados</h2>
+
+          <div class="resumo" id="resumo">
+            <p class="resumo__vazio" id="resumo-vazio">Escolha o dia e o horário nos passos 1 e 2. O resumo aparece aqui.</p>
+            <div id="resumo-cheio" hidden>
+              <p class="resumo__rotulo">Seu horário</p>
+              <p class="resumo__data" id="resumo-data"></p>
+              <p class="resumo__hora"><strong id="resumo-hora"></strong> · horário de Brasília</p>
+              <button type="button" class="link-btn" id="trocar">Trocar horário</button>
+            </div>
+          </div>
+
+          <form name="agendamento-dr-daniel" id="form" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+            <input type="hidden" name="form-name" value="agendamento-dr-daniel">
+            <input type="hidden" name="data" id="f-data">
+            <input type="hidden" name="horario" id="f-horario">
+            <input type="hidden" name="adicionar_google_agenda" id="f-agenda">
+            <input type="hidden" name="responder_paciente_whatsapp" id="f-responder">
+            <p class="hp" aria-hidden="true"><label>Não preencha este campo: <input type="text" name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+
+            <div class="campo">
+              <label for="nome">Nome completo</label>
+              <input id="nome" name="nome" type="text" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="next" maxlength="120" required aria-describedby="nome-erro">
+              <p class="erro" id="nome-erro" hidden></p>
+            </div>
+
+            <div class="campo">
+              <label for="whatsapp">WhatsApp</label>
+              <p class="campo__dica" id="whatsapp-dica">Com DDD, no formato (DD) 9XXXX-XXXX.</p>
+              <input id="whatsapp" name="whatsapp" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(DD) 9XXXX-XXXX" enterkeyhint="done" required aria-describedby="whatsapp-dica whatsapp-erro">
+              <p class="erro" id="whatsapp-erro" hidden></p>
+            </div>
+
+            <div class="campo campo--check">
+              <input type="checkbox" id="lgpd" name="consentimento_lgpd" value="Sim, autorizo" required aria-describedby="lgpd-erro">
+              <label for="lgpd">Autorizo o uso do meu nome e WhatsApp somente para a equipe do Dr. Daniel falar comigo sobre este agendamento, conforme a LGPD (Lei 13.709/2018).</label>
+              <p class="erro" id="lgpd-erro" hidden></p>
+            </div>
+
+            <p class="privacidade"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg><span>Pedimos só o necessário para agendar. Não é preciso contar nada sobre sua saúde aqui: isso fica para a consulta.</span></p>
+
+            <p class="erro erro--geral" id="form-erro" role="alert" hidden></p>
+
+            <button type="submit" class="btn-enviar" id="enviar">Enviar pedido de agendamento</button>
+            <p class="depois-envio">A confirmação chega pelo WhatsApp.</p>
+          </form>
+
+          <p class="urgencia">Esta página é só para agendamento. <strong>Em caso de urgência, procure o pronto-socorro mais próximo ou ligue 192 (SAMU).</strong></p>
+        </div>
+      </div>
+
+      <div class="sucesso" id="sucesso" tabindex="-1" hidden>
+        <div class="sucesso__icone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <h2>Pedido recebido!</h2>
+        <p class="sucesso__msg">A equipe do Dr. Daniel vai confirmar seu horário pelo WhatsApp.</p>
+        <p class="sucesso__resumo">Você pediu: <strong id="sucesso-horario"></strong></p>
+        <p class="sucesso__nota">O horário fica garantido depois da confirmação da equipe.</p>
+        <button type="button" class="link-btn" id="novo">Fazer outro pedido</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="rodape">
+  <div class="wrap">
+    <div class="rodape__orn" aria-hidden="true"><span></span></div>
+    <p class="rodape__nome">Dr. Daniel Cardoso de Bastos</p>
+    <p class="rodape__info">Clínico Geral · CRM-SP 239894</p>
+    <p class="rodape__nota">Os horários seguem o horário de Brasília. O agendamento é confirmado pela equipe pelo WhatsApp.</p>
+  </div>
+</footer>
+
+<aside class="barra" id="barra" aria-label="Horário escolhido" hidden>
+  <div class="barra__inner">
+    <p class="barra__texto"><span class="barra__rotulo">Seu horário</span><strong id="barra-horario"></strong></p>
+    <button type="button" class="barra__btn" id="barra-continuar">Continuar</button>
+  </div>
+</aside>
+
+<div class="sr-only" id="anuncio" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =================================================================
+     CONFIGURAÇÃO DA AGENDA. Altere só os valores abaixo.
+     ================================================================= */
+  var CONFIG = {
+    fuso: 'America/Sao_Paulo',
+    diasDeAtendimento: [1, 4, 5, 6],   // 0 = domingo … 6 = sábado (seg, qui, sex, sáb)
+    abertura: '09:00',
+    fechamento: '18:00',               // fim do atendimento: o último horário é 17:30
+    intervaloMin: 30,                  // de quanto em quanto tempo aparece um horário
+    duracaoMin: 30,                    // duração usada no Google Agenda
+    semanas: 4,                        // quantas semanas aparecem
+    antecedenciaMin: 30,               // esconde horários que começam em menos de X minutos (0 = só os que já passaram)
+    fecharPontosFacultativos: true,    // fecha na segunda de Carnaval e no Corpus Christi
+    feriadosLocais: [],                // 'MM-DD'. Ex.: '01-25' (aniversário da cidade de SP), '07-09' (feriado estadual de SP)
+    datasBloqueadas: []                // 'AAAA-MM-DD'. Férias, congressos etc. Ex.: '2026-12-24'
+  };
+  /* ================================================================= */
+
+  var DIA_MS = 864e5;
+  var SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+  var SEMANA_CURTA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  var MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var FERIADOS_FIXOS = {
+    '01-01': 'Confraternização Universal', '04-21': 'Tiradentes', '05-01': 'Dia do Trabalho',
+    '09-07': 'Independência do Brasil', '10-12': 'Nossa Senhora Aparecida', '11-02': 'Finados',
+    '11-15': 'Proclamação da República', '11-20': 'Dia da Consciência Negra', '12-25': 'Natal'
+  };
+  var DDDS = ('11 12 13 14 15 16 17 18 19 21 22 24 27 28 31 32 33 34 35 37 38 41 42 43 44 45 46 47 48 49 ' +
+    '51 53 54 55 61 62 63 64 65 66 67 68 69 71 73 74 75 77 79 81 82 83 84 85 86 87 88 89 91 92 93 94 95 96 97 98 99').split(' ');
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    diasCab: $('dias-cab'), dias: $('dias'), horariosFs: $('horarios-fs'), horarios: $('horarios'),
+    horariosLegenda: $('horarios-legenda'), horarioDica: $('horario-dica'), aviso: $('aviso'),
+    passoDia: $('passo-dia'), passoHorario: $('passo-horario'), passoDados: $('passo-dados'),
+    resumoVazio: $('resumo-vazio'), resumoCheio: $('resumo-cheio'), resumoData: $('resumo-data'), resumoHora: $('resumo-hora'),
+    trocar: $('trocar'), form: $('form'), nome: $('nome'), whats: $('whatsapp'), lgpd: $('lgpd'),
+    nomeErro: $('nome-erro'), whatsErro: $('whatsapp-erro'), lgpdErro: $('lgpd-erro'), formErro: $('form-erro'),
+    enviar: $('enviar'), fData: $('f-data'), fHorario: $('f-horario'), fAgenda: $('f-agenda'), fResponder: $('f-responder'),
+    etapas: $('etapas'), sucesso: $('sucesso'), sucessoHorario: $('sucesso-horario'), novo: $('novo'),
+    barra: $('barra'), barraHorario: $('barra-horario'), barraContinuar: $('barra-continuar'), anuncio: $('anuncio'),
+    tituloHorario: $('titulo-horario'), tituloDia: $('titulo-dia')
+  };
+
+  var estado = { dia: null, hora: null, agenda: null, assinatura: '', enviando: false, enviado: false, viaPonteiro: false };
+
+  /* ---------- Datas sempre no fuso de São Paulo, independentemente do celular ---------- */
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function data(dn) { return new Date(dn * DIA_MS); }
+  function diaDaSemana(dn) { return data(dn).getUTCDay(); }
+  function iso(dn) { var d = data(dn); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); }
+  function paraMin(hhmm) { var p = hhmm.split(':'); return (+p[0]) * 60 + (+p[1]); }
+  function hhmm(min) { return pad(Math.floor(min / 60)) + ':' + pad(min % 60); }
+  function maiuscula(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  var formatoSP = null;
+  try {
+    formatoSP = new Intl.DateTimeFormat('en-US', {
+      timeZone: CONFIG.fuso, year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', hourCycle: 'h23'
+    });
+  } catch (e) { formatoSP = null; }
+
+  function agoraSP() {
+    var agora = new Date();
+    if (formatoSP && formatoSP.formatToParts) {
+      var p = {};
+      formatoSP.formatToParts(agora).forEach(function (x) { p[x.type] = x.value; });
+      return { dia: Date.UTC(+p.year, +p.month - 1, +p.day) / DIA_MS, min: (+p.hour % 24) * 60 + (+p.minute) };
+    }
+    // Navegador muito antigo: São Paulo é UTC−3 (sem horário de verão desde 2019)
+    var t = agora.getTime() - 3 * 36e5;
+    return { dia: Math.floor(t / DIA_MS), min: Math.floor((t % DIA_MS) / 6e4) };
+  }
+
+  /* ---------- Feriados ---------- */
+  function pascoa(ano) {
+    var a = ano % 19, b = Math.floor(ano / 100), c = ano % 100, d = Math.floor(b / 4), e = b % 4,
+      f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30,
+      i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451),
+      mes = Math.floor((h + l - 7 * m + 114) / 31), dia = ((h + l - 7 * m + 114) % 31) + 1;
+    return Date.UTC(ano, mes - 1, dia) / DIA_MS;
+  }
+  var cacheFeriados = {};
+  function feriadosDoAno(ano) {
+    if (cacheFeriados[ano]) return cacheFeriados[ano];
+    var mapa = {};
+    Object.keys(FERIADOS_FIXOS).forEach(function (md) { mapa[ano + '-' + md] = FERIADOS_FIXOS[md]; });
+    CONFIG.feriadosLocais.forEach(function (md) { mapa[ano + '-' + md] = 'feriado local'; });
+    var p = pascoa(ano);
+    mapa[iso(p - 2)] = 'Sexta-feira Santa';
+    if (CONFIG.fecharPontosFacultativos) {
+      mapa[iso(p - 48)] = 'Carnaval';
+      mapa[iso(p + 60)] = 'Corpus Christi';
+    }
+    return (cacheFeriados[ano] = mapa);
+  }
+  function feriado(dn) { var s = iso(dn); return feriadosDoAno(+s.slice(0, 4))[s] || null; }
+
+  /* ---------- Agenda ---------- */
+  var colunas = CONFIG.diasDeAtendimento.slice().sort(function (a, b) { return ((a + 6) % 7) - ((b + 6) % 7); });
+  var horariosBase = (function () {
+    var lista = [], ini = paraMin(CONFIG.abertura), fim = paraMin(CONFIG.fechamento);
+    for (var m = ini; m + CONFIG.duracaoMin <= fim; m += CONFIG.intervaloMin) lista.push(m);
+    return lista;
+  })();
+
+  function montarAgenda() {
+    var agora = agoraSP(), hoje = agora.dia, ultimo = hoje + CONFIG.semanas * 7 - 1;
+    var segunda = hoje - ((diaDaSemana(hoje) + 6) % 7);
+    var semanas = [], porDia = {}, assinatura = [hoje];
+    for (var s = segunda; s <= ultimo; s += 7) {
+      var linha = colunas.map(function (wd) {
+        var dn = s + ((wd + 6) % 7), c = { dn: dn, iso: iso(dn), fora: dn < hoje || dn > ultimo };
+        if (c.fora) return c;
+        var nomeFeriado = feriado(dn);
+        if (nomeFeriado) { c.status = 'feriado'; c.motivo = nomeFeriado; }
+        else if (CONFIG.datasBloqueadas.indexOf(c.iso) > -1) { c.status = 'bloqueado'; }
+        else {
+          var base = (dn - hoje) * 1440, limite = agora.min + CONFIG.antecedenciaMin;
+          c.horarios = horariosBase.filter(function (m) { return base + m >= limite; });
+          c.status = c.horarios.length ? 'livre' : 'encerrado';
+        }
+        porDia[c.iso] = c;
+        assinatura.push(c.iso + ':' + c.status + ':' + (c.horarios ? c.horarios.length : 0));
+        return c;
+      });
+      if (linha.some(function (c) { return !c.fora; })) semanas.push(linha);
+    }
+    return { hoje: hoje, semanas: semanas, porDia: porDia, assinatura: assinatura.join('|') };
+  }
+
+  /* ---------- Textos ---------- */
+  function dataLonga(dn) { var d = data(dn); return maiuscula(SEMANA[d.getUTCDay()]) + ', ' + d.getUTCDate() + ' de ' + MESES[d.getUTCMonth()]; }
+  function dataCurta(dn) { var d = data(dn); return SEMANA_CURTA[d.getUTCDay()] + ', ' + d.getUTCDate() + ' ' + MESES_CURTOS[d.getUTCMonth()]; }
+  function dataNumerica(dn) { var d = data(dn); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); }
+  function dnDe(isoStr) { var p = isoStr.split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]) / DIA_MS; }
+
+  var temporizadorAnuncio;
+  function anunciar(texto) {
+    clearTimeout(temporizadorAnuncio);
+    el.anuncio.textContent = '';
+    temporizadorAnuncio = setTimeout(function () { el.anuncio.textContent = texto; }, 60);
+  }
+  function criar(tag, classe, texto) {
+    var n = document.createElement(tag);
+    if (classe) n.className = classe;
+    if (texto != null) n.textContent = texto;
+    return n;
+  }
+
+  /* ---------- Desenho dos dias ---------- */
+  function desenharDias() {
+    var ag = estado.agenda, focado = document.activeElement, focoDia = focado && focado.name === 'dia' ? focado.value : null;
+    el.diasCab.innerHTML = '';
+    colunas.forEach(function (wd) { el.diasCab.appendChild(criar('span', null, SEMANA_CURTA[wd])); });
+    el.dias.parentNode.style.setProperty('--cols', colunas.length);
+    el.dias.innerHTML = '';
+    var algumLivre = false;
+    ag.semanas.forEach(function (linha) {
+      var semana = criar('div', 'semana');
+      linha.forEach(function (c) {
+        var d = data(c.dn);
+        if (c.fora) {
+          var vazio = criar('span', 'dia dia--fora');
+          vazio.setAttribute('aria-hidden', 'true');
+          var cv = criar('span', 'dia__card'); cv.appendChild(criar('span', 'dia__num', d.getUTCDate()));
+          vazio.appendChild(cv); semana.appendChild(vazio);
+          return;
+        }
+        var rot = criar('label', 'dia'), input = criar('input'), card = criar('span', 'dia__card');
+        input.type = 'radio'; input.name = 'dia'; input.value = c.iso;
+        var nome = dataLonga(c.dn), extra = '', tag = '', sub = MESES_CURTOS[d.getUTCMonth()];
+        if (c.dn === ag.hoje) { tag = 'Hoje'; extra = ' (hoje)'; }
+        else if (c.dn === ag.hoje + 1) { tag = 'Amanhã'; extra = ' (amanhã)'; }
+        if (c.status === 'livre') { algumLivre = true; }
+        else {
+          input.disabled = true;
+          if (c.status === 'feriado') { sub = 'feriado'; extra += ': feriado (' + c.motivo + '), sem atendimento'; }
+          else if (c.status === 'bloqueado') { sub = 'sem agenda'; extra += ': sem atendimento neste dia'; }
+          else { sub = 'encerrado'; extra += ': não há mais horários hoje'; }
+        }
+        input.setAttribute('aria-label', nome + extra);
+        if (estado.dia === c.iso && c.status === 'livre') input.checked = true;
+        if (tag) card.appendChild(criar('span', 'dia__tag', tag));
+        card.appendChild(criar('span', 'dia__num', d.getUTCDate()));
+        card.appendChild(criar('span', 'dia__mes', sub));
+        rot.appendChild(input); rot.appendChild(card); semana.appendChild(rot);
+      });
+      el.dias.appendChild(semana);
+    });
+    if (!algumLivre) {
+      el.dias.appendChild(criar('p', 'dias__vazio', 'No momento não há horários abertos nas próximas ' + CONFIG.semanas + ' semanas. Volte a consultar esta página em breve.'));
+    }
+    if (focoDia) { var r = el.dias.querySelector('input[value="' + focoDia + '"]:not(:disabled)'); if (r) r.focus({ preventScroll: true }); }
+  }
+
+  /* ---------- Desenho dos horários ---------- */
+  function desenharHorarios() {
+    var c = estado.dia && estado.agenda.porDia[estado.dia];
+    var focado = document.activeElement, focoHora = focado && focado.name === 'hora' ? focado.value : null;
+    el.horarios.innerHTML = '';
+    if (!c || c.status !== 'livre') {
+      el.horariosFs.hidden = true;
+      el.horarioDica.textContent = 'Escolha um dia acima para ver os horários.';
+      return;
+    }
+    var nome = dataLonga(c.dn);
+    el.horarioDica.innerHTML = '';
+    el.horarioDica.appendChild(criar('strong', null, nome));
+    el.horarioDica.appendChild(document.createTextNode(' · horário de Brasília'));
+    el.horariosLegenda.textContent = 'Horários de ' + nome;
+    var turnos = [['Manhã', c.horarios.filter(function (m) { return m < 720; })], ['Tarde', c.horarios.filter(function (m) { return m >= 720; })]];
+    turnos.forEach(function (t, i) {
+      if (!t[1].length) return;
+      var grupo = criar('div', 'turno'), titulo = criar('h3', 'turno__titulo', t[0]), grade = criar('div', 'turno__grade');
+      titulo.id = 'turno-' + i; grupo.setAttribute('role', 'group'); grupo.setAttribute('aria-labelledby', titulo.id);
+      t[1].forEach(function (m) {
+        var rot = criar('label', 'hora'), input = criar('input'), card = criar('span', 'hora__card', hhmm(m));
+        input.type = 'radio'; input.name = 'hora'; input.value = String(m);
+        if (estado.hora === m) input.checked = true;
+        rot.appendChild(input); rot.appendChild(card); grade.appendChild(rot);
+      });
+      grupo.appendChild(titulo); grupo.appendChild(grade); el.horarios.appendChild(grupo);
+    });
+    el.horariosFs.hidden = false;
+    if (focoHora) { var r = el.horarios.querySelector('input[value="' + focoHora + '"]'); if (r) r.focus({ preventScroll: true }); }
+  }
+
+  /* ---------- Resumo, campos ocultos, passos e barra ---------- */
+  function atualizarResumo() {
+    var tem = estado.dia && estado.hora != null, dn = tem ? dnDe(estado.dia) : 0;
+    el.passoDia.classList.toggle('is-feito', !!estado.dia);
+    el.passoHorario.classList.toggle('is-feito', estado.hora != null);
+    el.resumoVazio.hidden = tem; el.resumoCheio.hidden = !tem;
+    if (tem) {
+      el.resumoData.textContent = dataLonga(dn);
+      el.resumoHora.textContent = hhmm(estado.hora);
+      el.barraHorario.textContent = dataCurta(dn) + ' · ' + hhmm(estado.hora);
+    }
+    atualizarBarra();
+  }
+
+  var mqCelular = window.matchMedia('(max-width: 959px)'), formVisivel = false, digitando = false;
+  function atualizarBarra() {
+    var mostrar = mqCelular.matches && estado.hora != null && !formVisivel && !digitando && !estado.enviado;
+    el.barra.hidden = !mostrar;
+    document.body.classList.toggle('com-barra', mostrar);
+  }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entradas) {
+      formVisivel = entradas[0].isIntersecting; atualizarBarra();
+    }, { rootMargin: '0px 0px -30% 0px' }).observe(el.passoDados);
+  }
+  if (mqCelular.addEventListener) mqCelular.addEventListener('change', atualizarBarra);
+  el.form.addEventListener('focusin', function () { digitando = true; atualizarBarra(); });
+  el.form.addEventListener('focusout', function () { digitando = false; setTimeout(atualizarBarra, 150); });
+
+  function mostrarAviso(texto) { el.aviso.textContent = texto; el.aviso.hidden = !texto; }
+
+  function rolarAte(alvo) {
+    var reduzir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    alvo.scrollIntoView({ behavior: reduzir ? 'auto' : 'smooth', block: 'start' });
+  }
+  function foraDaTela(alvo) { var r = alvo.getBoundingClientRect(); return r.top < 0 || r.top > window.innerHeight * 0.55; }
+
+  /* ---------- Atualização (virada do dia, horários que passam, aba que volta do segundo plano) ---------- */
+  function atualizar(forcar) {
+    var ag = montarAgenda();
+    if (!forcar && ag.assinatura === estado.assinatura) return;
+    estado.agenda = ag; estado.assinatura = ag.assinatura;
+    var c = estado.dia && ag.porDia[estado.dia];
+    if (estado.dia && (!c || c.status !== 'livre')) {
+      mostrarAviso('Os horários de ' + dataLonga(dnDe(estado.dia)).toLowerCase() + ' não estão mais disponíveis. Escolha outro dia, por favor.');
+      anunciar(el.aviso.textContent);
+      estado.dia = null; estado.hora = null;
+    } else if (estado.hora != null && c.horarios.indexOf(estado.hora) === -1) {
+      mostrarAviso('O horário das ' + hhmm(estado.hora) + ' acabou de passar. Escolha outro, por favor.');
+      anunciar(el.aviso.textContent);
+      estado.hora = null;
+    }
+    desenharDias(); desenharHorarios(); atualizarResumo();
+  }
+
+  /* ---------- Escolhas ---------- */
+  el.dias.addEventListener('pointerdown', function () { estado.viaPonteiro = true; });
+  el.horarios.addEventListener('pointerdown', function () { estado.viaPonteiro = true; });
+  document.addEventListener('keydown', function () { estado.viaPonteiro = false; }, true);
+
+  el.dias.addEventListener('change', function (e) {
+    if (e.target.name !== 'dia') return;
+    estado.dia = e.target.value; estado.hora = null;
+    mostrarAviso('');
+    desenharHorarios(); atualizarResumo();
+    var c = estado.agenda.porDia[estado.dia], n = c.horarios.length;
+    anunciar(dataLonga(c.dn) + ': ' + n + (n === 1 ? ' horário. ' : ' horários. ') + 'Agora escolha o horário.');
+    if (estado.viaPonteiro && foraDaTela(el.passoHorario)) rolarAte(el.passoHorario);
+  });
+
+  el.horarios.addEventListener('change', function (e) {
+    if (e.target.name !== 'hora') return;
+    estado.hora = +e.target.value;
+    mostrarAviso(''); limparErroGeral();
+    atualizarResumo();
+    anunciar('Horário escolhido: ' + dataLonga(dnDe(estado.dia)) + ', às ' + hhmm(estado.hora) + '. Agora preencha seus dados.');
+  });
+
+  function irParaDados() {
+    rolarAte(el.passoDados);
+    var alvo = !el.nome.value.trim() ? el.nome : (!whatsDigitos() ? el.whats : el.enviar);
+    setTimeout(function () { alvo.focus({ preventScroll: true }); }, 350);
+  }
+  el.barraContinuar.addEventListener('click', irParaDados);
+
+  el.trocar.addEventListener('click', function () {
+    var marcado = el.horarios.querySelector('input:checked') || el.dias.querySelector('input:checked');
+    rolarAte(estado.dia ? el.passoHorario : el.passoDia);
+    if (marcado) setTimeout(function () { marcado.focus({ preventScroll: true }); }, 350);
+  });
+
+  /* ---------- WhatsApp: máscara (DD) 9XXXX-XXXX ---------- */
+  function formatarWhats(d) {
+    if (!d) return '';
+    if (d.length <= 2) return '(' + d;
+    if (d.length <= 7) return '(' + d.slice(0, 2) + ') ' + d.slice(2);
+    return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
+  }
+  function normalizarWhats(d) {
+    var cortados = 0;
+    if (d.length > 11 && d.slice(0, 2) === '55') { d = d.slice(2); cortados += 2; }       // +55 colado ou digitado
+    while (d.length > 11 && d.charAt(0) === '0') { d = d.slice(1); cortados += 1; }      // 0 antes do DDD
+    if (d.length > 11) d = d.slice(0, 11);
+    return { d: d, cortados: cortados };
+  }
+  function whatsDigitos() { return el.whats.value.replace(/\D/g, ''); }
+  var ultimoWhats = '';
+  el.whats.addEventListener('input', function (e) {
+    var bruto = el.whats.value, pos = el.whats.selectionStart == null ? bruto.length : el.whats.selectionStart;
+    var antes = bruto.slice(0, pos).replace(/\D/g, '').length, d = bruto.replace(/\D/g, '');
+    if (d === ultimoWhats.replace(/\D/g, '') && bruto.length < ultimoWhats.length) {
+      // apagou só um símbolo da máscara: apaga o número vizinho
+      if (e.inputType === 'deleteContentForward') d = d.slice(0, antes) + d.slice(antes + 1);
+      else if (antes > 0) { d = d.slice(0, antes - 1) + d.slice(antes); antes--; }
+    }
+    var n = normalizarWhats(d);
+    antes = Math.min(Math.max(antes - n.cortados, 0), n.d.length);
+    // cursor logo depois do mesmo número em que estava
+    var texto = formatarWhats(n.d), cursor = texto.length;
+    if (antes === 0) cursor = texto ? 1 : 0;
+    else if (antes < n.d.length) {
+      for (var i = 0, vistos = 0; i < texto.length; i++) {
+        if (/\d/.test(texto.charAt(i)) && ++vistos === antes) { cursor = i + 1; break; }
+      }
+    }
+    el.whats.value = texto; ultimoWhats = texto;
+    if (document.activeElement === el.whats) { try { el.whats.setSelectionRange(cursor, cursor); } catch (x) { /* tipo tel no Safari antigo */ } }
+    if (el.whats.getAttribute('aria-invalid') === 'true') validarCampo('whats');
+  });
+
+  /* ---------- Validação ---------- */
+  function erroNome() {
+    var v = el.nome.value.trim().replace(/\s+/g, ' ');
+    if (!v) return 'Escreva seu nome completo.';
+    if (/\d/.test(v)) return 'O nome não deve ter números. Confira, por favor.';
+    var partes = v.split(' ').filter(function (p) { return p.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '').length >= 2; });
+    if (partes.length < 2) return 'Escreva nome e sobrenome, por favor.';
+    return '';
+  }
+  function erroWhats() {
+    var d = whatsDigitos();
+    if (!d) return 'Informe seu WhatsApp com DDD.';
+    if (d.length === 10 && d.charAt(2) !== '9') return 'Esse parece ser um telefone fixo. Informe um celular com WhatsApp: (DD) 9XXXX-XXXX.';
+    if (d.length < 11) return 'O número está incompleto. São 11 números: (DD) 9XXXX-XXXX.';
+    if (DDDS.indexOf(d.slice(0, 2)) === -1) return 'Confira o DDD: (' + d.slice(0, 2) + ') não é um DDD válido.';
+    if (d.charAt(2) !== '9') return 'Depois do DDD, o celular começa com 9. Confira o número.';
+    if (/^(\d)\1+$/.test(d.slice(3))) return 'Confira o número do WhatsApp, por favor.';
+    return '';
+  }
+  function erroLgpd() { return el.lgpd.checked ? '' : 'Para enviar o pedido, marque a autorização acima.'; }
+  var CAMPOS = {
+    nome: { input: el.nome, erro: el.nomeErro, regra: erroNome },
+    whats: { input: el.whats, erro: el.whatsErro, regra: erroWhats },
+    lgpd: { input: el.lgpd, erro: el.lgpdErro, regra: erroLgpd }
+  };
+  function validarCampo(chave) {
+    var c = CAMPOS[chave], msg = c.regra();
+    c.erro.textContent = msg; c.erro.hidden = !msg;
+    if (msg) c.input.setAttribute('aria-invalid', 'true'); else c.input.removeAttribute('aria-invalid');
+    return !msg;
+  }
+  el.nome.addEventListener('blur', function () { if (el.nome.value.trim()) validarCampo('nome'); });
+  el.nome.addEventListener('input', function () { if (el.nome.getAttribute('aria-invalid') === 'true') validarCampo('nome'); });
+  el.whats.addEventListener('blur', function () { if (whatsDigitos()) validarCampo('whats'); });
+  el.lgpd.addEventListener('change', function () { validarCampo('lgpd'); });
+  el.nome.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); el.whats.focus(); } });
+
+  function limparErroGeral() { el.formErro.hidden = true; el.formErro.textContent = ''; }
+  function erroGeral(msg) { el.formErro.textContent = msg; el.formErro.hidden = false; }
+
+  /* ---------- Links para a equipe ---------- */
+  function carimbo(dn, min) {
+    var d = data(dn + Math.floor(min / 1440)), m = min % 1440;
+    return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + 'T' + pad(Math.floor(m / 60)) + pad(m % 60) + '00';
+  }
+  function linkGoogleAgenda(dn, min, nome, whats, digitos) {
+    var p = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: 'Consulta · ' + nome,
+      dates: carimbo(dn, min) + '/' + carimbo(dn, min + CONFIG.duracaoMin),
+      ctz: CONFIG.fuso,
+      details: 'Pedido de agendamento feito pelo site.\nPaciente: ' + nome + '\nWhatsApp: ' + whats + ' · https://wa.me/55' + digitos + '\nAguardando confirmação da equipe.'
+    });
+    return 'https://calendar.google.com/calendar/render?' + p.toString();
+  }
+  function linkResponder(dn, min, nome, digitos) {
+    var primeiro = nome.split(' ')[0];
+    var texto = 'Olá, ' + primeiro + '! Aqui é da equipe do Dr. Daniel Cardoso de Bastos. Recebemos seu pedido de consulta para ' +
+      dataLonga(dn).toLowerCase() + ', às ' + hhmm(min) + '.';
+    return 'https://wa.me/55' + digitos + '?text=' + encodeURIComponent(texto);
+  }
+
+  /* ---------- Envio (Netlify Forms) ---------- */
+  el.form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (estado.enviando) return;
+    limparErroGeral();
+    var tinhaHorario = estado.hora != null;
+    atualizar(false);
+
+    if (!estado.dia || estado.hora == null) {
+      erroGeral(tinhaHorario
+        ? 'O horário escolhido não está mais disponível. Escolha outro, por favor.'
+        : 'Escolha um dia e um horário antes de enviar.');
+      var alvoPasso = estado.dia ? el.passoHorario : el.passoDia, alvoTitulo = estado.dia ? el.tituloHorario : el.tituloDia;
+      rolarAte(alvoPasso); alvoTitulo.focus({ preventScroll: true });
+      return;
+    }
+    var ok = ['nome', 'whats', 'lgpd'].map(validarCampo), primeiroErro = ['nome', 'whats', 'lgpd'][ok.indexOf(false)];
+    if (primeiroErro) { CAMPOS[primeiroErro].input.focus(); return; }
+
+    var dn = dnDe(estado.dia), min = estado.hora;
+    var nome = el.nome.value.trim().replace(/\s+/g, ' '), digitos = whatsDigitos(), whats = formatarWhats(digitos);
+    el.nome.value = nome;
+    el.fData.value = dataNumerica(dn) + ' (' + SEMANA[diaDaSemana(dn)] + ')';
+    el.fHorario.value = hhmm(min);
+    el.fAgenda.value = linkGoogleAgenda(dn, min, nome, whats, digitos);
+    el.fResponder.value = linkResponder(dn, min, nome, digitos);
+
+    estado.enviando = true;
+    el.enviar.setAttribute('aria-busy', 'true');
+    el.enviar.textContent = 'Enviando…';
+    anunciar('Enviando seu pedido…');
+
+    var controle = 'AbortController' in window ? new AbortController() : null;
+    var limite = setTimeout(function () { if (controle) controle.abort(); }, 20000);
+    fetch(el.form.getAttribute('action') || '/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(new FormData(el.form)).toString(),
+      signal: controle ? controle.signal : undefined
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      mostrarSucesso(dn, min);
+    }).catch(function () {
+      erroGeral('Não conseguimos enviar agora. Confira sua conexão com a internet e toque em "Enviar" de novo. Seus dados continuam preenchidos.');
+      el.enviar.focus();
+    }).then(function () {
+      clearTimeout(limite);
+      estado.enviando = false;
+      el.enviar.removeAttribute('aria-busy');
+      el.enviar.textContent = 'Enviar pedido de agendamento';
+    });
+  });
+
+  function mostrarSucesso(dn, min) {
+    estado.enviado = true;
+    el.sucessoHorario.textContent = dataLonga(dn) + ', às ' + hhmm(min);
+    el.etapas.hidden = true; el.sucesso.hidden = false;
+    atualizarBarra();
+    rolarAte(document.getElementById('agendar'));
+    el.sucesso.focus({ preventScroll: true });
+  }
+
+  el.novo.addEventListener('click', function () {
+    el.form.reset(); ultimoWhats = '';
+    ['nome', 'whats', 'lgpd'].forEach(function (k) { CAMPOS[k].erro.hidden = true; CAMPOS[k].input.removeAttribute('aria-invalid'); });
+    estado.dia = null; estado.hora = null; estado.enviado = false;
+    el.sucesso.hidden = true; el.etapas.hidden = false;
+    mostrarAviso(''); atualizar(true);
+    rolarAte(el.passoDia); el.tituloDia.focus({ preventScroll: true });
+  });
+
+  /* ---------- Foto: se ainda não foi colada, esconde a moldura ---------- */
+  var foto = document.querySelector('.retrato img');
+  function semFoto() { document.documentElement.classList.add('sem-foto'); }
+  if (foto && /^data:image\/gif;base64,R0lGODlhAQABAIAAAAAAAP|^$/.test(foto.getAttribute('src') || '')) semFoto();
+  else if (foto) foto.addEventListener('error', semFoto);
+
+  /* ---------- Início ---------- */
+  atualizar(true);
+  setInterval(function () { atualizar(false); }, 30000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) atualizar(false); });
+  window.addEventListener('pageshow', function () { atualizar(false); });
+  window.addEventListener('focus', function () { atualizar(false); });
+})();
+</script>
+</body>
+</html>
