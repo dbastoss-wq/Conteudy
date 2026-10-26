@@ -1,0 +1,363 @@
+<title>Simulado Amenorreia e DDS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: caderno de prova em coluna única; cada questão é uma folha, o gabarito se abre logo abaixo dela. */
+:root {
+  --paper: #f6f7f9;
+  --sheet: #ffffff;
+  --ink: #1c2230;
+  --muted: #5d6576;
+  --line: #dde1e8;
+  --accent: #6b2e5f;
+  --accent-soft: #f3e8f1;
+  --ok: #1e7a4c;
+  --ok-soft: #e4f4ea;
+  --bad: #b3372b;
+  --bad-soft: #fbe9e6;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #13161d; --sheet: #1b1f28; --ink: #e7e9ee; --muted: #a2a9b8; --line: #2e3442;
+    --accent: #d99ccb; --accent-soft: #33212f; --ok: #6fd39d; --ok-soft: #173026; --bad: #f08c80; --bad-soft: #3a1d1a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #13161d; --sheet: #1b1f28; --ink: #e7e9ee; --muted: #a2a9b8; --line: #2e3442;
+  --accent: #d99ccb; --accent-soft: #33212f; --ok: #6fd39d; --ok-soft: #173026; --bad: #f08c80; --bad-soft: #3a1d1a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+}
+.wrap {
+  max-width: 760px; margin: 0 auto;
+  padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px;
+}
+header { display: grid; gap: 10px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(28px, 5vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; max-width: 62ch; }
+.scorebar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--paper); border-bottom: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+  padding-block: 12px; font-family: var(--f-mono); font-size: 13px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+.dots { display: flex; gap: 6px; flex-wrap: wrap; }
+.dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 11px; color: var(--muted); text-decoration: none; }
+.dot.ok { background: var(--ok); border-color: var(--ok); color: var(--sheet); }
+.dot.bad { background: var(--bad); border-color: var(--bad); color: var(--sheet); }
+.score { margin-left: auto; font-variant-numeric: tabular-nums; }
+.reset { font: inherit; background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.reset:hover { border-color: var(--accent); color: var(--accent); }
+
+.q { background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; padding: 24px clamp(16px, 4vw, 28px); display: grid; gap: 16px; scroll-margin-top: 64px; }
+.qhead { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; font-family: var(--f-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.qhead b { font-family: var(--f-display); font-size: 18px; letter-spacing: 0; text-transform: none; color: var(--ink); }
+.tag { color: var(--accent); }
+.stem { margin: 0; }
+.stem .ask { display: block; margin-top: 10px; font-weight: 600; }
+.opts { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.opt {
+  width: 100%; text-align: left; font: inherit; color: var(--ink); background: var(--sheet);
+  border: 1.5px solid var(--line); border-radius: 8px; padding: 10px 14px; cursor: pointer;
+  display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; line-height: 1.5;
+}
+.opt:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt:disabled { cursor: default; }
+.letter { font-family: var(--f-mono); font-weight: 500; font-size: 14px; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; }
+.opt.correct { border-color: var(--ok); background: var(--ok-soft); }
+.opt.correct .letter { background: var(--ok); border-color: var(--ok); color: var(--sheet); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.opt.wrong .letter { background: var(--bad); border-color: var(--bad); color: var(--sheet); }
+.opt.dim { opacity: .72; }
+
+.ans { border-top: 1px dashed var(--line); padding-top: 16px; display: grid; gap: 14px; }
+.verdict { font-family: var(--f-display); font-weight: 700; font-size: 20px; margin: 0; }
+.verdict.ok { color: var(--ok); }
+.verdict.bad { color: var(--bad); }
+.verdict small { font-family: var(--f-mono); font-weight: 400; font-size: 13px; color: var(--muted); margin-left: 8px; }
+.ans h3 { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin: 0 0 4px; }
+.ans p { margin: 0; }
+.key { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; }
+.key p { font-size: 16px; }
+.distr { display: grid; gap: 10px; list-style: none; padding: 0; margin: 0; }
+.distr li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; font-size: 16px; }
+.distr .letter { width: 24px; height: 24px; font-size: 13px; }
+.kind { display: inline-block; font-family: var(--f-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 0 6px; margin-right: 6px; vertical-align: 1px; }
+footer { color: var(--muted); font-size: 14px; }
+@media (max-width: 480px) {
+  body { font-size: 16px; }
+  .score { margin-left: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ans { animation: open .25s ease-out; }
+  @keyframes open { from { opacity: .4; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Ginecologia · Estilo SUS-SP · 8 questões inéditas</span>
+    <h1>Embriologia, amenorreia e diferenças do desenvolvimento sexual</h1>
+    <p class="lede">Questões de nível moderado a difícil, escritas a partir da revisão EMR. Escolha uma alternativa: o gabarito, o comentário e a análise de cada distrator aparecem logo abaixo.</p>
+  </header>
+
+  <div class="scorebar">
+    <div class="dots" id="dots"></div>
+    <span class="score" id="score">0 de 8 respondidas · 0 acertos</span>
+    <button class="reset" id="reset" type="button">Recomeçar</button>
+  </div>
+
+  <main id="quiz" style="display:grid;gap:28px"></main>
+
+  <footer>Questões elaboradas no formato da banca SUS-SP (caso clínico + 4 alternativas). Não são questões oficiais de provas anteriores; o conteúdo segue a revisão “Embriologia, Amenorreia e Diferenças no Desenvolvimento Sexual” (EMR, 2026).</footer>
+</div>
+
+<script>
+const Q = [
+{
+  tema: "Embriologia sexual",
+  stem: "Feto com cariótipo 46,XY tem testículos com células de Sertoli e de Leydig funcionantes, que produzem hormônio antimülleriano e testosterona em níveis normais. Entretanto, há incapacidade de converter a testosterona em di-hidrotestosterona (DHT).",
+  ask: "Considerando a embriologia sexual, espera-se encontrar:",
+  opts: [
+    "Útero e tubas uterinas presentes, ausência de estruturas wolffianas e genitália externa feminina.",
+    "Ausência de útero; presença de epidídimo, vasos deferentes e vesículas seminais; genitália externa sem virilização completa.",
+    "Ausência de útero e de estruturas wolffianas, com genitália externa feminina e vagina em fundo cego.",
+    "Útero presente, estruturas wolffianas presentes e genitália externa masculina normal."
+  ],
+  correct: 1,
+  coment: "Cada hormônio tem um alvo próprio. O antimülleriano faz regredir os ductos de Müller, então não há tubas, útero nem 2/3 superiores da vagina. A testosterona desenvolve os ductos de Wolff (epidídimo, vaso deferente, ductos ejaculatórios e vesícula seminal). A DHT é que masculiniza as protuberâncias externas: tubérculo genital, pregas urogenitais e eminências labioescrotais. Sem DHT, a genitália interna é masculina e a externa não se virilizou por completo.",
+  chave: "Antimülleriano → Müller regride. Testosterona → Wolff se desenvolve. DHT → genitália externa masculina.",
+  distr: {
+    0: ["Padrão de outra síndrome", "É o quadro da disgenesia gonadal pura XY (Swyer): gônada primitiva sem testosterona nem antimülleriano, por isso há Müller e falta Wolff. O enunciado diz que os dois hormônios são normais."],
+    2: ["Padrão de outra síndrome", "É a insensibilidade completa aos androgênios (Morris): o antimülleriano atua (sem útero), mas a testosterona não age, então também não há Wolff. Aqui a testosterona age normalmente."],
+    3: ["Contradiz o enunciado", "Útero presente exigiria falta de antimülleriano, e genitália externa masculina normal exigiria DHT. O caso diz o contrário nos dois pontos."]
+  }
+},
+{
+  tema: "Pseudo-hermafroditismo feminino",
+  stem: "Recém-nascida de 10 dias é levada ao pronto-socorro com vômitos, desidratação e perda de peso. Ao exame, clitoromegalia e fusão parcial das pregas labioescrotais; gônadas não palpáveis. Exames: sódio 124 mEq/L e potássio 6,9 mEq/L. O teste do pezinho veio alterado e o cariótipo é 46,XX.",
+  ask: "Assinale a alternativa correta.",
+  opts: [
+    "Trata-se de pseudo-hermafroditismo masculino por insensibilidade aos androgênios; a gonadectomia é a prioridade.",
+    "Trata-se de hiperplasia adrenal congênita, forma clássica perdedora de sal, por deficiência da 21-hidroxilase (CYP21), com 17-OH-progesterona elevada; o tratamento é repor cortisol.",
+    "Trata-se de hiperplasia adrenal congênita, forma não clássica, com 17-OH-progesterona reduzida e excesso de cortisol.",
+    "Trata-se de hermafroditismo verdadeiro, pois há virilização em cariótipo 46,XX; deve-se buscar tecido ovariano e testicular na mesma gônada."
+  ],
+  correct: 1,
+  coment: "Virilização em 46,XX com gônadas não palpáveis é pseudo-hermafroditismo feminino, e a principal causa é a hiperplasia adrenal congênita. A deficiência da 21-hidroxilase reduz a produção de cortisol e/ou aldosterona; o precursor acumulado (17-OHP) é desviado para androgênios. Hiponatremia com hipercalemia e desidratação nas primeiras semanas indicam a forma clássica perdedora de sal. O rastreio é o teste do pezinho e o tratamento é repor cortisol (com mineralocorticoide na forma perdedora de sal).",
+  chave: "HAC: 21-hidroxilase (CYP21), ↑17-OHP + androgênios, rastreio no teste do pezinho, tratamento com reposição de cortisol.",
+  distr: {
+    0: ["Troca de categoria", "A insensibilidade aos androgênios é pseudo-hermafroditismo masculino: cariótipo XY e genitália externa feminina, sem virilização. O caso é XX e virilizado."],
+    2: ["Mecanismo invertido", "A forma não clássica (tardia) não causa crise perdedora de sal no período neonatal. Além disso, na HAC a 17-OHP está elevada e o cortisol está deficiente, não em excesso."],
+    3: ["Diagnóstico de exclusão", "Virilização em 46,XX não define hermafroditismo verdadeiro. Com teste do pezinho alterado e distúrbio hidroeletrolítico, a causa adrenal explica todo o quadro."]
+  }
+},
+{
+  tema: "Amenorreia primária sem útero",
+  stem: "Jovem de 17 anos procura a UBS porque nunca menstruou e sente dor nas tentativas de relação sexual. Estatura 1,68 m, mamas Tanner 5, pelos pubianos e axilares escassos. Ao exame especular, vagina curta em fundo cego. A ultrassonografia pélvica não identifica útero e mostra imagens ovaladas em região inguinal bilateral.",
+  ask: "Qual o diagnóstico mais provável e a conduta adequada?",
+  opts: [
+    "Síndrome de Mayer-Rokitansky-Küster-Hauser; cariótipo 46,XX; solicitar ressonância magnética e investigar anomalias renais.",
+    "Insensibilidade completa aos androgênios (síndrome de Morris); cariótipo 46,XY; excisão dos testículos, estrogenioterapia e dilatação vaginal ou neovagina.",
+    "Disgenesia gonadal pura 46,XY (síndrome de Swyer); terapia de reposição com estrogênio e progesterona e retirada das gônadas.",
+    "Síndrome de Turner; cariótipo 45,X0; terapia de reposição com estrogênio e progesterona."
+  ],
+  correct: 1,
+  coment: "As duas causas clássicas de amenorreia primária com ausência de útero são Morris e Rokitansky. Ambas têm mamas desenvolvidas e vagina em fundo cego. O que as separa é o pelo: na síndrome de Morris não há ação androgênica, então pelos pubianos e axilares são escassos, a estatura é normal e as gônadas são testículos (muitas vezes inguinais). A conduta é estrogênio, dilatação ou neovagina e excisão dos testículos.",
+  chave: "Sem útero + mamas presentes: pelos AUSENTES → Morris (XY, testículo). Pelos PRESENTES → Rokitansky (XX, ovário).",
+  distr: {
+    0: ["Síndrome vizinha", "Na agenesia mülleriana (Rokitansky) o ovário funciona e não há resistência androgênica, então os pelos axilares e pubianos são normais. RM e pesquisa de anomalias renais são de fato a investigação dessa síndrome, o que torna a alternativa atraente."],
+    2: ["Detalhe que elimina", "Na síndrome de Swyer não há antimülleriano, então o útero está presente. Também não há produção hormonal, então as mamas não se desenvolvem (infantilismo genital)."],
+    3: ["Fenótipo incompatível", "Turner cursa com baixa estatura, infantilismo sexual e útero presente (genitália interna feminina pré-púbere). A paciente tem 1,68 m, mamas Tanner 5 e não tem útero."]
+  }
+},
+{
+  tema: "Disgenesia gonadal",
+  stem: "Adolescente de 16 anos é encaminhada por amenorreia primária. Estatura 1,65 m, sem estigmas turnerianos. Mamas Tanner 1 e pelos pubianos normais. A ultrassonografia mostra útero de dimensões infantis; gônadas não identificadas. FSH 92 mUI/mL, LH 40 mUI/mL e estradiol baixo. Cariótipo 46,XY.",
+  ask: "Sobre o caso, assinale a alternativa correta.",
+  opts: [
+    "O útero está presente porque a gônada primitiva não produz hormônio antimülleriano; a conduta inclui reposição com estrogênio e progesterona e excisão das gônadas.",
+    "Como o cariótipo é 46,XY, a presença de útero é incompatível com o diagnóstico; deve-se repetir a ultrassonografia antes de prosseguir.",
+    "Como as gônadas não produzem hormônios, podem ser preservadas; a reposição deve ser feita apenas com estrogênio.",
+    "Trata-se de hipogonadismo hipogonadotrófico; o próximo passo é o teste do GnRH."
+  ],
+  correct: 0,
+  coment: "É a síndrome de Swyer (disgenesia gonadal pura XY). A gônada é primitiva e não produz hormônios: sem testosterona não há Wolff, e sem antimülleriano os ductos de Müller formam útero, tubas e parte superior da vagina. Genitália interna e externa são femininas, há infantilismo genital com pelos pubianos normais, estatura normal e gonadotrofinas elevadas. A conduta é reposição com estrogênio e progesterona e excisão das gônadas (os “testículos” disgenéticos).",
+  chave: "Swyer: 46,XY, gônada primitiva, COM Müller (útero presente), FSH alto, estatura normal. Conduta: E + P e gonadectomia.",
+  distr: {
+    1: ["Raciocínio por cariótipo", "O útero depende da ausência de antimülleriano, não do cariótipo. Em 46,XY com gônada que não produz antimülleriano, o útero é esperado."],
+    2: ["Meia-verdade", "É verdade que a gônada não produz hormônios, mas a conduta é retirá-la. E, como há útero, o estrogênio deve ser associado à progesterona."],
+    3: ["Etapa errada do fluxograma", "FSH e LH elevados definem hipogonadismo hipergonadotrófico (FSH ≥ 25), cuja investigação é o cariótipo. O teste do GnRH só entra quando as gonadotrofinas estão baixas."]
+  }
+},
+{
+  tema: "Definição de amenorreia",
+  stem: "Durante o atendimento na Unidade Básica de Saúde, o médico avalia quatro pacientes que procuraram o serviço por atraso ou ausência menstrual.",
+  ask: "Em qual delas a investigação de amenorreia já está indicada?",
+  opts: [
+    "14 anos, telarca aos 11 e pubarca aos 12 anos, ainda sem menarca; sem dor pélvica e sem estigmas genéticos.",
+    "14 anos, telarca aos 9 anos e 6 meses, ainda sem menarca; assintomática.",
+    "13 anos e 4 meses, sem desenvolvimento mamário e sem pelos pubianos.",
+    "25 anos, ciclos previamente regulares, sem menstruar há 2 meses; β-hCG negativo."
+  ],
+  correct: 2,
+  coment: "Amenorreia primária: ausência de menarca aos 13 anos quando os caracteres sexuais secundários estão ausentes; aos 15 anos quando estão presentes; ou 5 anos após a telarca, se ela ocorreu antes dos 10 anos. Investiga-se antes disso quando há estigmas genéticos ou dor pélvica com caracteres presentes. Amenorreia secundária: 3 meses consecutivos sem menstruar ou menos de 9 menstruações no ano.",
+  chave: "Primária: 13 anos sem caracteres · 15 anos com caracteres · 5 anos após telarca precoce (< 10 anos). Secundária: 3 meses ou < 9 ciclos/ano.",
+  distr: {
+    0: ["Prazo não atingido", "Tem caracteres sexuais presentes, então o limite é 15 anos. Sem dor pélvica e sem estigmas, ainda não há indicação."],
+    1: ["Conta incompleta", "A telarca foi antes dos 10 anos, então vale o critério de 5 anos após a telarca, que se completa aos 14 anos e 6 meses. Com 14 anos, faltam 6 meses."],
+    3: ["Critério de tempo", "Amenorreia secundária exige 3 meses consecutivos sem menstruar (ou menos de 9 menstruações no ano). Dois meses ainda não fecham o critério."]
+  }
+},
+{
+  tema: "Hiperprolactinemia",
+  stem: "Mulher de 31 anos com esquizofrenia, em uso de risperidona há 8 meses, refere amenorreia há 5 meses e galactorreia bilateral. Não tem cefaleia nem alterações visuais. Exames: β-hCG negativo, TSH normal e prolactina de 72 ng/mL.",
+  ask: "Qual a conduta mais adequada neste momento?",
+  opts: [
+    "Ressonância magnética de sela túrcica e indicação de cirurgia transesfenoidal.",
+    "Considerar causa medicamentosa e discutir com a psiquiatria a substituição ou o ajuste do antipsicótico.",
+    "Iniciar bromocriptina, que é o agonista dopaminérgico de escolha.",
+    "Realizar o teste da progesterona; se houver sangramento, o diagnóstico é síndrome dos ovários policísticos."
+  ],
+  correct: 1,
+  coment: "A primeira etapa da investigação é β-hCG, prolactina e TSH. Com gravidez e hipotireoidismo afastados, diante de hiperprolactinemia a primeira pergunta é: há medicação? Antipsicóticos (risperidona, fenotiazinas, butirofenonas, sulpirida), antidepressivos tricíclicos, haloperidol, metoclopramida e metildopa elevam a prolactina. Prolactinoma passa a ser a suspeita principal com valores acima de 250 ng/mL. Aqui o valor é moderado e há um fármaco que explica o quadro.",
+  chave: "Hiperprolactinemia: afastar gravidez, hipotireoidismo e medicações. Prolactinoma: suspeitar se > 250. Tratamento: cabergolina (escolha).",
+  distr: {
+    0: ["Conduta precoce", "A cirurgia transesfenoidal é exceção mesmo no prolactinoma, cujo tratamento inicial é com agonista dopaminérgico. E com prolactina de 72 em uso de risperidona, a hipótese de tumor nem é a principal."],
+    2: ["Fármaco trocado", "O agonista dopaminérgico de escolha é a cabergolina; a bromocriptina é alternativa. Além disso, antes de tratar é preciso abordar a causa medicamentosa."],
+    3: ["Pulou etapa", "A amenorreia já está explicada pela hiperprolactinemia, que inibe o eixo. O teste da progesterona entra quando β-hCG, TSH e prolactina são normais."]
+  }
+},
+{
+  tema: "Investigação da amenorreia secundária",
+  stem: "Mulher de 29 anos tem amenorreia há 6 meses. Ciclos eram regulares até realizar curetagem uterina por aborto retido, seguida de endometrite. β-hCG negativo, TSH e prolactina normais. O teste da progesterona por 7 a 10 dias foi negativo. Em seguida, o teste com estrogênio e progesterona também foi negativo.",
+  ask: "A principal hipótese diagnóstica é:",
+  opts: [
+    "Anovulação crônica, com a síndrome dos ovários policísticos como causa mais provável.",
+    "Hipogonadismo; o próximo passo é dosar FSH e LH para diferenciar hiper de hipogonadotrófico.",
+    "Causa anatômica uterina (síndrome de Asherman), por sinéquias intrauterinas após a curetagem.",
+    "Insuficiência ovariana prematura, a ser confirmada por FSH ≥ 25."
+  ],
+  correct: 2,
+  coment: "No fluxograma: se o teste da progesterona é positivo, a causa é anovulação (SOP). Se é negativo, faz-se o teste com estrogênio e progesterona. Se ele é positivo, o endométrio responde e o problema é hipogonadismo (dosar FSH/LH). Se é negativo mesmo com estímulo hormonal adequado, o endométrio ou o trato de saída não respondem: causa anatômica. A curetagem com endometrite é o cenário típico da síndrome de Asherman.",
+  chave: "Progesterona (+) → anovulação. Progesterona (−) e E + P (+) → hipogonadismo. E + P (−) → causa anatômica (Asherman).",
+  distr: {
+    0: ["Etapa errada do fluxograma", "Na anovulação há estrogênio endógeno e endométrio funcional, então o teste da progesterona seria positivo. Aqui foi negativo."],
+    1: ["Ramo trocado", "Dosar FSH/LH é o passo seguinte quando o teste com estrogênio e progesterona é positivo. Com E + P negativo, a falha está no útero e não no eixo."],
+    3: ["Ramo trocado", "Na insuficiência ovariana falta estrogênio, mas o endométrio responde ao estímulo externo: o teste com E + P seria positivo."]
+  }
+},
+{
+  tema: "Hipogonadismo hipogonadotrófico",
+  stem: "Corredora de longa distância de 22 anos treina cerca de 100 km por semana e está há 8 meses sem menstruar. IMC 20 kg/m²; nega restrição alimentar, compulsão ou purgação. β-hCG negativo, TSH e prolactina normais. Teste da progesterona negativo; teste com estrogênio e progesterona positivo. FSH e LH baixos. No teste do GnRH houve aumento de FSH e LH.",
+  ask: "Assinale a alternativa correta.",
+  opts: [
+    "A causa é hipofisária, como na síndrome de Sheehan, já que as gonadotrofinas basais estão baixas.",
+    "Trata-se de amenorreia hipotalâmica funcional, em que o exercício excessivo atua por meio das β-endorfinas.",
+    "Trata-se de amenorreia hipotalâmica funcional mediada pelo neuropeptídeo Y, mecanismo típico do exercício intenso.",
+    "Trata-se de hipogonadismo hipergonadotrófico; o próximo passo é solicitar cariótipo."
+  ],
+  correct: 1,
+  coment: "Com FSH/LH baixos (hipogonadotrófico), o teste do GnRH localiza a lesão. Se FSH e LH aumentam, a hipófise funciona e a causa é hipotalâmica: idiopática, síndrome de Kallmann ou amenorreia hipotalâmica funcional. Se não se alteram, a causa é hipofisária (síndrome de Sheehan). Na forma funcional, cada gatilho tem um mediador: estresse → CRH e cortisol; anorexia → neuropeptídeo Y; exercício excessivo → β-endorfinas.",
+  chave: "Teste do GnRH: aumento de FSH/LH → hipotalâmica. Sem alteração → hipofisária (Sheehan). Exercício → β-endorfinas.",
+  distr: {
+    0: ["Interpretação invertida", "Gonadotrofinas basais baixas existem nas duas formas. Quem separa é a resposta ao GnRH: houve aumento, então a hipófise responde e a causa não é hipofisária."],
+    2: ["Mediador trocado", "O neuropeptídeo Y está ligado à anorexia. No exercício excessivo, o mediador são as β-endorfinas. A paciente nega transtorno alimentar."],
+    3: ["Classificação errada", "Hipergonadotrófico é FSH/LH aumentados (insuficiência ovariana). Aqui estão baixos, por isso o ramo seguinte é o teste do GnRH, não o cariótipo."]
+  }
+}
+];
+
+const L = ["A", "B", "C", "D"];
+const quiz = document.getElementById("quiz");
+const dots = document.getElementById("dots");
+const scoreEl = document.getElementById("score");
+let answers = {};
+try { answers = JSON.parse(localStorage.getItem("amen-dds-answers") || "{}") || {}; } catch (e) { answers = {}; }
+
+function save() { try { localStorage.setItem("amen-dds-answers", JSON.stringify(answers)); } catch (e) {} }
+
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+function render() {
+  quiz.innerHTML = "";
+  dots.innerHTML = "";
+  Q.forEach((q, i) => {
+    const sec = document.createElement("section");
+    sec.className = "q";
+    sec.id = "q" + (i + 1);
+    sec.innerHTML = `
+      <div class="qhead"><b>Questão ${i + 1}</b><span class="tag">${q.tema}</span></div>
+      <p class="stem">${esc(q.stem)}<span class="ask">${esc(q.ask)}</span></p>
+      <ul class="opts">${q.opts.map((o, j) => `<li><button type="button" class="opt" id="q${i}o${j}" data-q="${i}" data-o="${j}"><span class="letter">${L[j]}</span><span>${esc(o)}</span></button></li>`).join("")}</ul>
+      <div class="ans" hidden></div>`;
+    quiz.appendChild(sec);
+    const d = document.createElement("a");
+    d.className = "dot"; d.href = "#q" + (i + 1); d.textContent = i + 1;
+    d.setAttribute("aria-label", "Ir para a questão " + (i + 1));
+    dots.appendChild(d);
+    if (answers[i] !== undefined) reveal(i, answers[i]);
+  });
+  updateScore();
+}
+
+function reveal(i, chosen) {
+  const q = Q[i];
+  const sec = document.getElementById("q" + (i + 1));
+  sec.querySelectorAll(".opt").forEach(b => {
+    const j = +b.dataset.o;
+    b.disabled = true;
+    if (j === q.correct) b.classList.add("correct");
+    else if (j === chosen) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  const ok = chosen === q.correct;
+  const ans = sec.querySelector(".ans");
+  ans.innerHTML = `
+    <p class="verdict ${ok ? "ok" : "bad"}">${ok ? "Correta" : "Incorreta"}<small>Gabarito: ${L[q.correct]} · você marcou ${L[chosen]}</small></p>
+    <div><h3>Comentário</h3><p>${esc(q.coment)}</p></div>
+    <div class="key"><h3>Ponto-chave da revisão</h3><p>${esc(q.chave)}</p></div>
+    <div><h3>Distratores usados pela banca</h3>
+      <ul class="distr">${Object.keys(q.distr).map(k => `<li><span class="letter">${L[k]}</span><span><span class="kind">${q.distr[k][0]}</span>${esc(q.distr[k][1])}</span></li>`).join("")}</ul>
+    </div>`;
+  ans.hidden = false;
+  dots.children[i] && dots.children[i].classList.add(ok ? "ok" : "bad");
+}
+
+function updateScore() {
+  const n = Object.keys(answers).length;
+  const hits = Object.keys(answers).filter(k => answers[k] === Q[k].correct).length;
+  scoreEl.textContent = `${n} de ${Q.length} respondidas · ${hits} acerto${hits === 1 ? "" : "s"}`;
+}
+
+quiz.addEventListener("click", e => {
+  const b = e.target.closest(".opt");
+  if (!b || b.disabled) return;
+  const i = +b.dataset.q, j = +b.dataset.o;
+  answers[i] = j; save();
+  reveal(i, j);
+  updateScore();
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  answers = {}; save(); render(); window.scrollTo(0, 0);
+});
+
+render();
+</script>
