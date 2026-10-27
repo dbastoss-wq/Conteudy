@@ -48,6 +48,12 @@ Tools for planning, running and measuring Google Ads campaigns and creating the 
 | Hemingway Editor | [hemingwayapp.com](https://hemingwayapp.com) | Highlights long sentences, passive voice and complex words to make copy easier to read | Free + Premium |
 | Surfer SEO | [surferseo.com](https://surferseo.com) | Content editor that scores articles against top-ranking pages and suggests terms, headings and length | Premium |
 
+### AI Coding
+
+| Tool Name | Link | Description | Pricing |
+| --- | --- | --- | --- |
+| Aider | [aider.chat](https://aider.chat) | Open-source AI pair programmer for the terminal that edits files across your git repo, auto-commits each change and works with Claude, DeepSeek, OpenAI or local models | Free (you pay your model provider for API use) |
+
 ### Design & Video
 
 | Tool Name | Link | Description | Pricing |
