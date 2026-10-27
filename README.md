@@ -52,7 +52,7 @@ Tools for planning, running and measuring Google Ads campaigns and creating the 
 
 | Tool Name | Link | Description | Pricing |
 | --- | --- | --- | --- |
-| Aider | [aider.chat](https://aider.chat) | Open-source AI pair programmer for the terminal that edits files across your git repo, auto-commits each change and works with Claude, DeepSeek, OpenAI or local models | Free (you pay your model provider for API use) |
+| Aider | [aider.chat](https://aider.chat) | Open-source AI pair programmer for the terminal that maps your whole git repo, edits across files, auto-commits each change and works with Claude, DeepSeek, OpenAI or local models | Free (you pay your model provider for API use) |
 
 ### Design & Video
 
