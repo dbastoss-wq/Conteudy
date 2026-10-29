@@ -1,0 +1,34 @@
+{
+  "name": "bot-whatsapp-dr-daniel",
+  "private": true,
+  "type": "module",
+  "description": "Assistente virtual de WhatsApp do consultório do Dr. Daniel Cardoso de Bastos: pedidos de agendamento ligados à agenda online.",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run test",
+    "conferir-pagina": "CONFERIR_PAGINA=1 vitest run test/pagina.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.3.0",
+    "@chat-adapter/state-memory": "4.43.0",
+    "@chat-adapter/state-redis": "4.43.0",
+    "@chat-adapter/whatsapp": "4.43.0",
+    "@vercel/functions": "3.10.4",
+    "chat": "4.43.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "$zod"
+    }
+  }
+}
